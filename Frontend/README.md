@@ -14,8 +14,6 @@ Frontend application for EduConnect, a tutoring platform connecting students wit
 - [API Endpoints](#api-endpoints)
 - [Authentication](#authentication)
 - [User Roles](#user-roles)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## 🎯 Overview
 
@@ -317,33 +315,4 @@ Key dependencies:
 - `react-hook-form` - Form management
 - `zod` - Schema validation
 
-## 🤝 Contributing
 
-1. Create a feature branch: `git checkout -b feature/your-feature`
-2. Follow project code style and conventions
-3. Write tests for new features
-4. Submit a pull request with clear description
-
-## 📄 License
-
-This project is licensed under the ISC License - see the LICENSE file for details.
-
-## 🔗 Resources
-
-- [Backend Documentation](../server/)
-- [API Specification](../server/03_API_SPECIFICATION.md)
-- [Database Schema](../server/02_DATABASE_DESIGN.md)
-- [System Architecture](../server/01_SYSTEM_ARCHITECTURE.md)
-
-## 📞 Support
-
-For issues or questions:
-1. Check existing GitHub issues
-2. Create a new issue with detailed description
-3. Include browser/environment information
-4. Provide steps to reproduce
-
----
-
-**Last Updated**: 2026
-**Maintained by**: EduConnect Team
