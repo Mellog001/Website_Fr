@@ -1,4 +1,4 @@
-# 🎓 EduConnect Frontend
+# 🎓 EduConnect 
 
 Frontend application for EduConnect, a tutoring platform connecting students with verified tutors. Built with modern web technologies for a responsive and interactive learning experience.
 
@@ -17,7 +17,7 @@ Frontend application for EduConnect, a tutoring platform connecting students wit
 
 ## 🎯 Overview
 
-EduConnect Frontend is a modern, responsive web application that enables:
+EduConnect  is a modern, responsive web application that enables:
 
 - **Students** to discover and enroll in courses, access learning materials, submit assessments, and track their progress
 - **Tutors** to create and manage courses, upload educational materials, grade submissions, and schedule tutoring sessions
