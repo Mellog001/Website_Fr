@@ -1,92 +1,78 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-
-<title>Sign Up</title>
-
-<link rel="stylesheet" href="css/style.css">
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up — EduConnect</title>
+<link rel="stylesheet" href="CSS/style.css">
 </head>
-
 <body>
 
 <div class="form-container">
+  <h2>Create Account</h2>
 
-<h2>Create Account</h2>b
+  <p class="form-error" id="formError" hidden></p>
 
-<form id="signupForm">
+  <form id="signupForm">
     <div class="input-group">
-        <label>Full Name</label>
-        <input type="text" id="fullName" placeholder="Enter your full name" required>
+      <label for="email">Email Address</label>
+      <input type="email" id="email" placeholder="you@example.com" required>
     </div>
     <div class="input-group">
-        <label>Email Address</label>
-        <input type="email" id="email" placeholder="Enter your email" required>
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="At least 8 characters" required minlength="8">
+      <small>Must include an uppercase letter, a lowercase letter, and a number.</small>
     </div>
     <div class="input-group">
-        <label>Password</label>
-        <input type="password" id="password" placeholder="Create a password" required>
+      <label for="role">I am a</label>
+      <select id="role" required>
+        <option value="STUDENT">Student</option>
+        <option value="TUTOR">Tutor</option>
+      </select>
     </div>
-    <button type="submit" class="btn">Sign Up</button>
-</form>
+    <button type="submit" class="btn" id="submitBtn">Sign Up</button>
+  </form>
 
-<input type="text" placeholder="Full Name" required>
-
-<input type="email" placeholder="Email" required>
-
-<input type="password" placeholder="Password" required>
-
-<button type="submit">Create Account</button>
-
-</form>
-
-<p>Already have an account? <a href="login.html">Login</a></p>
-
+  <p>Already have an account? <a href="login.html">Login</a></p>
 </div>
 
-<script src="js/script.js"></script>
+<script src="js/api.js"></script>
 <script>
-    const signupForm = document.getElementById('signupForm');
+  const form = document.getElementById("signupForm");
+  const errorEl = document.getElementById("formError");
+  const submitBtn = document.getElementById("submitBtn");
 
-    signupForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); // Prevents the page from refreshing
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorEl.hidden = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Creating account...";
 
-document.getElementById('signupForm').addEventListener('submit', async (e) => {
-    e.preventDefault()});
-    
-    const studentData = {
-        full_name: document.getElementById('fullName').value,
-        email: document.getElementById('email').value,
-        password: document.getElementById('password').value
-    };
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const role = document.getElementById("role").value;
 
-    try {
-        const response = await fetch('http://localhost:5000/api/auth/signup', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(studentData)
-        });
+    const result = await Api.register(email, password, role);
 
-        const result = await response.json();
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Sign Up";
 
-        if (response.ok) {
-            alert(result.message || 'Account created successfully!');
-            window.location.href = 'login.html'; 
-        } else {
-            // This safely falls back to result.error if result.message doesn't exist
-            const errorMessage = result.message || result.error || 'Registration failed';
-            alert('Error: ' + errorMessage);
-        }
-    } catch (error) {
-        console.error('Fetch error:', error);
-        alert('Could not connect to the backend server.');
+    if (!result || !result.ok) {
+      const detail = result && result.details && result.details[0] && result.details[0].message;
+      errorEl.textContent = detail || (result && result.message) || "Couldn't connect to the server.";
+      errorEl.hidden = false;
+      return;
     }
-});
+
+    Auth.setSession({
+      accessToken: result.data.accessToken,
+      refreshToken: result.data.refreshToken,
+      user: result.data.user,
+    });
+
+    window.location.href = "dashboard.html";
+  });
 </script>
 
 </body>
-
 </html>
