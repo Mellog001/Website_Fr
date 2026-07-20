@@ -1,28 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const bullmq_1 = require("bullmq");
-const redis_1 = require("../../config/redis");
-const mpesa_service_1 = require("../../features/payments/mpesa.service");
-const logger_1 = require("../../config/logger");
-const mpesaService = new mpesa_service_1.MpesaService();
-const worker = new bullmq_1.Worker('payments', async (job) => {
-    logger_1.logger.info(`👷 Payment Worker processing Job ${job.id} [${job.name}]`);
-    if (job.name === 'reconcile-payment') {
-        const { paymentId } = job.data;
-        if (!paymentId) {
-            throw new Error('Reconciliation failed: Missing paymentId in job data.');
-        }
-        await mpesaService.reconcilePayment(paymentId);
-    }
-}, {
-    connection: redis_1.redisConnection,
-    concurrency: 5, // Process up to 5 reconciliations in parallel
-});
-worker.on('completed', (job) => {
-    logger_1.logger.info(`✅ Payment Job ${job.id} has completed successfully.`);
-});
-worker.on('failed', (job, err) => {
-    logger_1.logger.error(`❌ Payment Job ${job?.id} failed with error: ${err.message}`);
-});
-exports.default = worker;
+exports.stopJobProcessor = exports.startJobProcessor = void 0;
+/**
+ * This file previously contained a BullMQ Worker.
+ * The BullMQ / Redis stack has been removed.
+ *
+ * Job processing is now handled by the MySQL-backed job processor.
+ * See: src/jobs/job-processor.ts
+ */
+var job_processor_1 = require("../job-processor");
+Object.defineProperty(exports, "startJobProcessor", { enumerable: true, get: function () { return job_processor_1.startJobProcessor; } });
+Object.defineProperty(exports, "stopJobProcessor", { enumerable: true, get: function () { return job_processor_1.stopJobProcessor; } });
 //# sourceMappingURL=payment.worker.js.map

@@ -9,7 +9,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   JWT_ACCESS_SECRET: z.string().min(32),
   JWT_REFRESH_SECRET: z.string().min(32),
-  REDIS_URL: z.string().url().default('redis://localhost:6379'),
+  FRONTEND_URL: z.string().url().default('http://localhost:3000'),
 
   // M-Pesa Daraja
   MPESA_CONSUMER_KEY: z.string(),

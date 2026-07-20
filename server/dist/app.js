@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const path_1 = __importDefault(require("path"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
@@ -39,10 +40,11 @@ app.get('/health', (_req, res) => {
         uptime: process.uptime(),
         services: {
             database: 'UP',
-            redis: 'UP',
         },
     });
 });
+// Serve local uploaded files
+app.use('/uploads', express_1.default.static(path_1.default.resolve(process.cwd(), 'uploads')));
 // Centralized Routing hooks
 app.use('/api/v1', routes_1.default);
 // Catch 404 and forward to error handler

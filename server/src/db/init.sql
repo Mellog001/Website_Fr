@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('STUDENT', 'TUTOR', 'ADMIN') NOT NULL DEFAULT 'STUDENT',
+  is_email_verified BOOLEAN NOT NULL DEFAULT FALSE,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted_at DATETIME NULL DEFAULT NULL,
@@ -198,6 +199,8 @@ CREATE TABLE IF NOT EXISTS tutor_competency_tests (
   subject_id VARCHAR(36) NOT NULL,
   score DECIMAL(5,2) NULL,
   status ENUM('PENDING', 'PASSED', 'FAILED') NOT NULL DEFAULT 'PENDING',
+  submission_file_url VARCHAR(1024) NOT NULL,
+  submission_file_key VARCHAR(512) NOT NULL,
   graded_by_id VARCHAR(36) NULL,
   feedback TEXT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -228,4 +231,54 @@ CREATE TABLE IF NOT EXISTS sessions (
   CONSTRAINT fk_sessions_tutor FOREIGN KEY (tutor_id) REFERENCES tutor_profiles(id) ON DELETE CASCADE,
   CONSTRAINT fk_sessions_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE SET NULL,
   CONSTRAINT fk_sessions_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- REFRESH TOKENS  (replaces Redis session store)
+-- ============================================
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id VARCHAR(36) NOT NULL PRIMARY KEY,
+  user_id VARCHAR(36) NOT NULL,
+  token_id VARCHAR(36) NOT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_refresh_tokens_user_id (user_id),
+  INDEX idx_refresh_tokens_token_id (token_id),
+  INDEX idx_refresh_tokens_expires_at (expires_at),
+  CONSTRAINT fk_refresh_tokens_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- VERIFICATION TOKENS (Email Verification & Password Reset)
+-- ============================================
+CREATE TABLE IF NOT EXISTS verification_tokens (
+  id VARCHAR(36) NOT NULL PRIMARY KEY,
+  user_id VARCHAR(36) NOT NULL,
+  token VARCHAR(255) NOT NULL,
+  type ENUM('EMAIL_VERIFICATION', 'PASSWORD_RESET') NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_verification_tokens_user_id (user_id),
+  INDEX idx_verification_tokens_token (token),
+  INDEX idx_verification_tokens_expires_at (expires_at),
+  CONSTRAINT fk_verification_tokens_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- SCHEDULED JOBS  (replaces BullMQ / Redis queues)
+-- ============================================
+CREATE TABLE IF NOT EXISTS scheduled_jobs (
+  id VARCHAR(36) NOT NULL PRIMARY KEY,
+  queue_name VARCHAR(100) NOT NULL,
+  job_name VARCHAR(100) NOT NULL,
+  payload JSON NOT NULL,
+  status ENUM('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED') NOT NULL DEFAULT 'PENDING',
+  attempts INT NOT NULL DEFAULT 0,
+  max_attempts INT NOT NULL DEFAULT 3,
+  run_at DATETIME NOT NULL,
+  error_message TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_scheduled_jobs_poll (queue_name, status, run_at),
+  INDEX idx_scheduled_jobs_run_at (run_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

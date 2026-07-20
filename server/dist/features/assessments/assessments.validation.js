@@ -18,7 +18,7 @@ exports.submitAssessmentSchema = zod_1.z.object({
     }),
     body: zod_1.z.object({
         fileUrl: zod_1.z.string().url('Submission file URL must be valid'),
-        fileKey: zod_1.z.string().min(1, 'Submission file S3 key is required'),
+        fileKey: zod_1.z.string().min(1, 'Submission file key is required'),
     }),
 });
 exports.gradeSubmissionSchema = zod_1.z.object({

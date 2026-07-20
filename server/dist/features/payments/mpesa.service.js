@@ -5,9 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MpesaService = void 0;
 const axios_1 = __importDefault(require("axios"));
-const client_1 = require("@prisma/client");
+const uuid_1 = require("uuid");
+const enums_1 = require("../../types/enums");
 const mpesa_1 = require("../../config/mpesa");
-const prisma_1 = require("../../config/prisma");
+const database_1 = __importDefault(require("../../config/database"));
 const app_error_1 = require("../../common/errors/app-error");
 const logger_1 = require("../../config/logger");
 const queues_1 = require("../../jobs/queues");
@@ -61,22 +62,17 @@ class MpesaService {
     async initiateStkPush(userId, courseId, phone) {
         const formattedPhone = this.formatPhoneNumber(phone);
         // Fetch Course details
-        const course = await prisma_1.prisma.course.findUnique({
-            where: { id: courseId },
-        });
+        const [courseRows] = await database_1.default.execute('SELECT id, title, price FROM courses WHERE id = ?', [courseId]);
+        const course = courseRows[0];
         if (!course) {
             throw app_error_1.AppError.notFound('Course not found.');
         }
-        if (course.price.isZero()) {
+        if (Number(course.price) === 0) {
             throw app_error_1.AppError.badRequest('This course is free. Use direct enrollment.');
         }
         // Verify if already enrolled
-        const existingEnrollment = await prisma_1.prisma.enrollment.findUnique({
-            where: {
-                studentId_courseId: { studentId: userId, courseId },
-            },
-        });
-        if (existingEnrollment) {
+        const [enrollmentRows] = await database_1.default.execute('SELECT id FROM enrollments WHERE student_id = ? AND course_id = ?', [userId, courseId]);
+        if (enrollmentRows.length > 0) {
             throw app_error_1.AppError.conflict('You are already enrolled in this course.');
         }
         // Generate Request parameters
@@ -111,24 +107,16 @@ class MpesaService {
                 throw app_error_1.AppError.badRequest('Daraja STK Push dispatch rejected by Safaricom.');
             }
             // Log transaction record in database
-            const payment = await prisma_1.prisma.payment.create({
-                data: {
-                    studentId: userId,
-                    courseId: courseId,
-                    amount: course.price,
-                    status: client_1.PaymentStatus.PENDING,
-                    checkoutRequestId: CheckoutRequestID,
-                    merchantRequestId: MerchantRequestID,
-                    phoneNumber: formattedPhone,
-                },
-            });
+            const paymentId = (0, uuid_1.v4)();
+            await database_1.default.execute(`INSERT INTO payments (id, student_id, course_id, amount, status, checkout_request_id, merchant_request_id, phone_number)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [paymentId, userId, courseId, course.price, enums_1.PaymentStatus.PENDING, CheckoutRequestID, MerchantRequestID, formattedPhone]);
             // Schedule an automated reconciliation check in BullMQ after 10 minutes in case callback fails
-            await queues_1.paymentQueue.add('reconcile-payment', { paymentId: payment.id }, { delay: 10 * 60 * 1000 } // 10 minutes
+            await queues_1.paymentQueue.add('reconcile-payment', { paymentId }, { delay: 10 * 60 * 1000 } // 10 minutes
             );
             logger_1.logger.info(`💸 STK Push initiated for Student: ${userId} -> CheckoutRequestID: ${CheckoutRequestID}`);
             return {
                 message: CustomerMessage || 'STK Push sent. Please check your handset to complete payment.',
-                paymentId: payment.id,
+                paymentId,
                 checkoutRequestId: CheckoutRequestID,
             };
         }
@@ -148,15 +136,14 @@ class MpesaService {
         const { CheckoutRequestID, ResultCode, ResultDesc } = callbackData;
         logger_1.logger.info(`Webhook payment response received -> CheckoutRequestID: ${CheckoutRequestID} | ResultCode: ${ResultCode}`);
         // Fetch corresponding payment record
-        const payment = await prisma_1.prisma.payment.findUnique({
-            where: { checkoutRequestId: CheckoutRequestID },
-        });
+        const [paymentRows] = await database_1.default.execute('SELECT * FROM payments WHERE checkout_request_id = ?', [CheckoutRequestID]);
+        const payment = paymentRows[0];
         if (!payment) {
             logger_1.logger.warn(`⚠️ Callback received for untracked checkout ID: ${CheckoutRequestID}`);
             return { status: 'ignored' };
         }
         // Skip processing if already finalized (idempotency guard)
-        if (payment.status !== client_1.PaymentStatus.PENDING) {
+        if (payment.status !== enums_1.PaymentStatus.PENDING) {
             logger_1.logger.info(`Payment record ${payment.id} already settled with status ${payment.status}. Ignoring callback.`);
             return { status: 'already_settled' };
         }
@@ -166,40 +153,31 @@ class MpesaService {
             const getVal = (name) => metadataItems.find((item) => item.Name === name)?.Value;
             const mpesaReceiptNumber = getVal('MpesaReceiptNumber');
             // Perform atomic database update: mark payment settled & auto enroll student
-            await prisma_1.prisma.$transaction(async (tx) => {
+            const connection = await database_1.default.getConnection();
+            try {
+                await connection.beginTransaction();
                 // 1. Mark payment as SUCCESSFUL
-                await tx.payment.update({
-                    where: { id: payment.id },
-                    data: {
-                        status: client_1.PaymentStatus.SUCCESSFUL,
-                        mpesaReceiptNumber: String(mpesaReceiptNumber),
-                        paidAt: new Date(),
-                    },
-                });
+                await connection.execute('UPDATE payments SET status = ?, mpesa_receipt_number = ?, paid_at = NOW() WHERE id = ?', [enums_1.PaymentStatus.SUCCESSFUL, String(mpesaReceiptNumber), payment.id]);
                 // 2. Create enrollment record
-                const enrollment = await tx.enrollment.create({
-                    data: {
-                        studentId: payment.studentId,
-                        courseId: payment.courseId,
-                        status: client_1.EnrollmentStatus.ACTIVE,
-                        progress: 0.0,
-                    },
-                });
+                const enrollmentId = (0, uuid_1.v4)();
+                await connection.execute('INSERT INTO enrollments (id, student_id, course_id, status, progress) VALUES (?, ?, ?, ?, ?)', [enrollmentId, payment.student_id, payment.course_id, enums_1.EnrollmentStatus.ACTIVE, 0.0]);
                 // 3. Link enrollment to payment record
-                await tx.payment.update({
-                    where: { id: payment.id },
-                    data: { enrollmentId: enrollment.id },
-                });
-                logger_1.logger.info(`✅ Successfully settled payment ${payment.id} & enrolled Student: ${payment.studentId} in Course: ${payment.courseId}`);
-            });
+                await connection.execute('UPDATE payments SET enrollment_id = ? WHERE id = ?', [enrollmentId, payment.id]);
+                await connection.commit();
+                logger_1.logger.info(`✅ Successfully settled payment ${payment.id} & enrolled Student: ${payment.student_id} in Course: ${payment.course_id}`);
+            }
+            catch (error) {
+                await connection.rollback();
+                throw error;
+            }
+            finally {
+                connection.release();
+            }
             return { status: 'success' };
         }
         else {
             // TRANSACTION CANCELLED / FAILED
-            await prisma_1.prisma.payment.update({
-                where: { id: payment.id },
-                data: { status: client_1.PaymentStatus.FAILED },
-            });
+            await database_1.default.execute('UPDATE payments SET status = ? WHERE id = ?', [enums_1.PaymentStatus.FAILED, payment.id]);
             logger_1.logger.info(`❌ Payment ${payment.id} marked as FAILED. Reason: ${ResultDesc}`);
             return { status: 'failed', reason: ResultDesc };
         }
@@ -208,14 +186,13 @@ class MpesaService {
      * Query Safaricom status to reconcile a payment (Reconciliation Service)
      */
     async reconcilePayment(paymentId) {
-        const payment = await prisma_1.prisma.payment.findUnique({
-            where: { id: paymentId },
-        });
+        const [paymentRows] = await database_1.default.execute('SELECT * FROM payments WHERE id = ?', [paymentId]);
+        const payment = paymentRows[0];
         if (!payment) {
             logger_1.logger.error(`Reconciliation failed: Payment ${paymentId} not found.`);
             return;
         }
-        if (payment.status !== client_1.PaymentStatus.PENDING) {
+        if (payment.status !== enums_1.PaymentStatus.PENDING) {
             return; // Already settled
         }
         logger_1.logger.info(`🔄 Running payment reconciliation query for Payment ID: ${paymentId}`);
@@ -226,7 +203,7 @@ class MpesaService {
             BusinessShortCode: mpesa_1.mpesaConfig.shortCode,
             Password: password,
             Timestamp: timestamp,
-            CheckoutRequestID: payment.checkoutRequestId,
+            CheckoutRequestID: payment.checkout_request_id,
         };
         try {
             const response = await axios_1.default.post(`${mpesa_1.mpesaConfig.baseUrl}${mpesa_1.mpesaConfig.stkPushQueryEndpoint}`, requestBody, {
@@ -240,15 +217,15 @@ class MpesaService {
             const callbackMock = {
                 Body: {
                     stkCallback: {
-                        MerchantRequestID: payment.merchantRequestId,
-                        CheckoutRequestID: payment.checkoutRequestId,
+                        MerchantRequestID: payment.merchant_request_id,
+                        CheckoutRequestID: payment.checkout_request_id,
                         ResultCode: Number(ResultCode),
                         ResultDesc,
                         CallbackMetadata: {
                             Item: [
-                                { Name: 'MpesaReceiptNumber', Value: `RECON-${payment.checkoutRequestId.slice(0, 5)}` },
+                                { Name: 'MpesaReceiptNumber', Value: `RECON-${payment.checkout_request_id.slice(0, 5)}` },
                                 { Name: 'Amount', Value: payment.amount },
-                                { Name: 'PhoneNumber', Value: payment.phoneNumber },
+                                { Name: 'PhoneNumber', Value: payment.phone_number },
                             ],
                         },
                     },
@@ -260,10 +237,7 @@ class MpesaService {
         catch (error) {
             // Safaricom sends 404/500 if transaction not found (indicates transaction was cancelled or never typed PIN)
             logger_1.logger.warn(`Failed querying Safaricom query API for payment ${paymentId}. Setting status to FAILED. Message: ${error.message}`);
-            await prisma_1.prisma.payment.update({
-                where: { id: paymentId },
-                data: { status: client_1.PaymentStatus.FAILED },
-            });
+            await database_1.default.execute('UPDATE payments SET status = ? WHERE id = ?', [enums_1.PaymentStatus.FAILED, paymentId]);
         }
     }
 }

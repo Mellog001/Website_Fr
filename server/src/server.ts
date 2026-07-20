@@ -2,10 +2,12 @@ import app from './app';
 import { env } from './config/env';
 import { logger } from './config/logger';
 import pool from './config/database';
-import { redisConnection } from './config/redis';
+import { startJobProcessor, stopJobProcessor } from './jobs/job-processor';
 
 const server = app.listen(env.PORT, () => {
   logger.info(`🚀 EduConnect server is running in [${env.NODE_ENV}] mode on port ${env.PORT}`);
+  // Start the MySQL-backed background job processor
+  startJobProcessor();
 });
 
 const gracefulShutdown = async (signal: string) => {
@@ -17,13 +19,12 @@ const gracefulShutdown = async (signal: string) => {
   });
 
   try {
+    // Stop the background job processor
+    stopJobProcessor();
+
     // Disconnect MySQL pool
     await pool.end();
     logger.info('MySQL database connection pool closed.');
-
-    // Disconnect Redis
-    await redisConnection.quit();
-    logger.info('Redis client disconnected.');
 
     logger.info('Graceful shutdown completed successfully. Exiting.');
     process.exit(0);

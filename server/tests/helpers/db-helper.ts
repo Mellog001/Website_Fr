@@ -5,6 +5,8 @@ import pool from '../../src/config/database';
  */
 export async function cleanDatabase() {
   const tableNames = [
+    'scheduled_jobs',
+    'refresh_tokens',
     'submissions',
     'assessments',
     'materials',

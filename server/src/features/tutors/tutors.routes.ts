@@ -13,6 +13,10 @@ import { UserRole } from '../../types/enums';
 const router = Router();
 const controller = new TutorsController();
 
+// Public endpoints
+router.get('/public', controller.getPublicTutors);
+router.get('/public/:profileId', controller.getPublicTutorById);
+
 // Tutor-only profile endpoints
 router.get('/profile', authenticate, authorize(UserRole.TUTOR), controller.getProfile);
 router.put('/profile', authenticate, authorize(UserRole.TUTOR), validate(updateProfileSchema), controller.updateProfile);
