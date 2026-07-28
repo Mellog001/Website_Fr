@@ -1,8 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnalyticsService = void 0;
-const client_1 = require("@prisma/client");
-const prisma_1 = require("../../config/prisma");
+const enums_1 = require("../../types/enums");
+const database_1 = __importDefault(require("../../config/database"));
 const app_error_1 = require("../../common/errors/app-error");
 class AnalyticsService {
     /**
@@ -10,111 +13,82 @@ class AnalyticsService {
      */
     async getAdminDashboardStats() {
         // 1. Total Platform Revenue (Successful payments)
-        const revenueAgg = await prisma_1.prisma.payment.aggregate({
-            _sum: { amount: true },
-            where: { status: client_1.PaymentStatus.SUCCESSFUL },
-        });
-        const totalRevenue = revenueAgg._sum.amount || 0;
+        const [revenueRows] = await database_1.default.execute('SELECT COALESCE(SUM(amount), 0) AS total_revenue FROM payments WHERE status = ?', [enums_1.PaymentStatus.SUCCESSFUL]);
+        const totalRevenue = revenueRows[0].total_revenue;
         // 2. User Accounts Breakdown
-        const studentCount = await prisma_1.prisma.user.count({ where: { role: client_1.UserRole.STUDENT } });
-        const tutorCount = await prisma_1.prisma.user.count({ where: { role: client_1.UserRole.TUTOR } });
-        const activeTutors = await prisma_1.prisma.tutorProfile.count({ where: { isVerified: true } });
+        const [studentCountRows] = await database_1.default.execute('SELECT COUNT(*) AS count FROM users WHERE role = ?', [enums_1.UserRole.STUDENT]);
+        const [tutorCountRows] = await database_1.default.execute('SELECT COUNT(*) AS count FROM users WHERE role = ?', [enums_1.UserRole.TUTOR]);
+        const [activeTutorRows] = await database_1.default.execute('SELECT COUNT(*) AS count FROM tutor_profiles WHERE is_verified = ?', [true]);
         // 3. Courses and Enrollments count
-        const totalCourses = await prisma_1.prisma.course.count();
-        const totalEnrollments = await prisma_1.prisma.enrollment.count();
+        const [courseCountRows] = await database_1.default.execute('SELECT COUNT(*) AS count FROM courses');
+        const [enrollmentCountRows] = await database_1.default.execute('SELECT COUNT(*) AS count FROM enrollments');
         // 4. Revenue grouped by Subject
-        const subjectRevenueList = await prisma_1.prisma.payment.findMany({
-            where: { status: client_1.PaymentStatus.SUCCESSFUL },
-            include: {
-                course: {
-                    select: {
-                        subject: { select: { name: true, code: true } },
-                    },
-                },
-            },
-        });
-        const revenueBySubjectMap = {};
-        for (const payment of subjectRevenueList) {
-            const subjectName = payment.course.subject.name;
-            revenueBySubjectMap[subjectName] = (revenueBySubjectMap[subjectName] || 0) + Number(payment.amount);
-        }
-        const revenueBySubject = Object.entries(revenueBySubjectMap).map(([subject, revenue]) => ({
-            subject,
-            revenue,
-        }));
+        const [revenueBySubjectRows] = await database_1.default.execute(`SELECT s.name AS subject, COALESCE(SUM(p.amount), 0) AS revenue
+       FROM payments p
+       JOIN courses c ON c.id = p.course_id
+       JOIN subjects s ON s.id = c.subject_id
+       WHERE p.status = ?
+       GROUP BY s.name`, [enums_1.PaymentStatus.SUCCESSFUL]);
         // 5. Recent Platform Payments
-        const recentPayments = await prisma_1.prisma.payment.findMany({
-            take: 5,
-            orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                amount: true,
-                status: true,
-                mpesaReceiptNumber: true,
-                createdAt: true,
-                student: { select: { email: true } },
-                course: { select: { title: true } },
-            },
-        });
+        const [recentPayments] = await database_1.default.execute(`SELECT p.id, p.amount, p.status, p.mpesa_receipt_number, p.created_at,
+              u.email AS student_email, c.title AS course_title
+       FROM payments p
+       JOIN users u ON u.id = p.student_id
+       JOIN courses c ON c.id = p.course_id
+       ORDER BY p.created_at DESC
+       LIMIT 5`);
         return {
             revenue: {
                 totalGross: totalRevenue,
-                bySubject: revenueBySubject,
+                bySubject: revenueBySubjectRows,
             },
             users: {
-                totalStudents: studentCount,
-                totalTutors: tutorCount,
-                activeVerifiedTutors: activeTutors,
+                totalStudents: studentCountRows[0].count,
+                totalTutors: tutorCountRows[0].count,
+                activeVerifiedTutors: activeTutorRows[0].count,
             },
             content: {
-                totalCourses,
-                totalEnrollments,
+                totalCourses: courseCountRows[0].count,
+                totalEnrollments: enrollmentCountRows[0].count,
             },
-            recentPayments,
+            recentPayments: recentPayments.map((p) => ({
+                ...p,
+                student: { email: p.student_email },
+                course: { title: p.course_title },
+            })),
         };
     }
     /**
      * Fetch tutor-specific dashboard analytics (Tutors only)
      */
     async getTutorDashboardStats(userId) {
-        const profile = await prisma_1.prisma.tutorProfile.findUnique({ where: { userId } });
-        if (!profile) {
+        const [profileRows] = await database_1.default.execute('SELECT id, competency_status, competency_score FROM tutor_profiles WHERE user_id = ?', [userId]);
+        if (profileRows.length === 0) {
             throw app_error_1.AppError.notFound('Tutor profile not found.');
         }
+        const profile = profileRows[0];
         // 1. Total Tutor Earnings (Successful payments for courses owned by tutor)
-        const earningsAgg = await prisma_1.prisma.payment.aggregate({
-            _sum: { amount: true },
-            where: {
-                status: client_1.PaymentStatus.SUCCESSFUL,
-                course: { tutorId: profile.id },
-            },
-        });
-        const totalEarnings = earningsAgg._sum.amount || 0;
+        const [earningsRows] = await database_1.default.execute(`SELECT COALESCE(SUM(p.amount), 0) AS total_earnings
+       FROM payments p
+       JOIN courses c ON c.id = p.course_id
+       WHERE p.status = ? AND c.tutor_id = ?`, [enums_1.PaymentStatus.SUCCESSFUL, profile.id]);
+        const totalEarnings = earningsRows[0].total_earnings;
         // 2. Student Enrollments in this tutor's courses
-        const studentEnrollments = await prisma_1.prisma.enrollment.count({
-            where: {
-                course: { tutorId: profile.id },
-            },
-        });
+        const [enrollmentCountRows] = await database_1.default.execute(`SELECT COUNT(*) AS count
+       FROM enrollments e
+       JOIN courses c ON c.id = e.course_id
+       WHERE c.tutor_id = ?`, [profile.id]);
         // 3. Breakdown of student counts per Course
-        const tutorCourses = await prisma_1.prisma.course.findMany({
-            where: { tutorId: profile.id },
-            select: {
-                id: true,
-                title: true,
-                price: true,
-                isPublished: true,
-                _count: {
-                    select: { enrollments: true },
-                },
-            },
-        });
-        const courseOutlines = tutorCourses.map((c) => ({
+        const [courseRows] = await database_1.default.execute(`SELECT c.id, c.title, c.price, c.is_published,
+              (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) AS enrolled_count
+       FROM courses c
+       WHERE c.tutor_id = ?`, [profile.id]);
+        const courseOutlines = courseRows.map((c) => ({
             courseId: c.id,
             title: c.title,
             price: c.price,
-            isPublished: c.isPublished,
-            enrolledCount: c._count.enrollments,
+            isPublished: c.is_published,
+            enrolledCount: c.enrolled_count,
         }));
         return {
             tutorProfileId: profile.id,
@@ -122,12 +96,12 @@ class AnalyticsService {
                 totalGross: totalEarnings,
             },
             enrollments: {
-                totalStudents: studentEnrollments,
+                totalStudents: enrollmentCountRows[0].count,
             },
             courses: courseOutlines,
             competency: {
-                status: profile.competencyStatus,
-                score: profile.competencyScore,
+                status: profile.competency_status,
+                score: profile.competency_score,
             },
         };
     }

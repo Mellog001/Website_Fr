@@ -83,6 +83,35 @@ export class AssessmentsController {
       next(error);
     }
   };
+  public getAssessmentById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { assessmentId } = req.params;
+      const result = await assessmentsService.getAssessmentById(
+        req.user!.id,
+        assessmentId
+      );
+
+      res.status(200).json({
+        status: 'success',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getMySubmissions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const result = await assessmentsService.getMySubmissions(req.user!.id);
+
+      res.status(200).json({
+        status: 'success',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AssessmentsController;

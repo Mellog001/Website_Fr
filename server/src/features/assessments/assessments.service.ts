@@ -170,7 +170,9 @@ export class AssessmentsService {
       score,
       submission.max_score,
       feedback
-    );
+    ).catch(err => {
+      logger.error(`Failed to send grade notification email to ${submission.student_email}:`, err);
+    });
 
     const [gradedRows] = await pool.execute<RowDataPacket[]>(
       'SELECT * FROM submissions WHERE id = ?',
@@ -212,6 +214,74 @@ export class AssessmentsService {
     return rows.map((r: any) => ({
       ...r,
       student: { id: r.student_user_id, email: r.student_email },
+    }));
+  }
+
+  /**
+   * View a single assessment details (Students)
+   */
+  public async getAssessmentById(studentId: string, assessmentId: string) {
+    const [assessmentRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT a.*, m.course_id 
+       FROM assessments a
+       JOIN modules m ON m.id = a.module_id
+       WHERE a.id = ?`,
+      [assessmentId]
+    );
+
+    if (assessmentRows.length === 0) {
+      throw AppError.notFound('Assessment not found.');
+    }
+
+    const assessment = assessmentRows[0];
+    
+    // Verify Student Enrollment
+    const [enrollmentRows] = await pool.execute<RowDataPacket[]>(
+      'SELECT id FROM enrollments WHERE student_id = ? AND course_id = ?',
+      [studentId, assessment.course_id]
+    );
+
+    if (enrollmentRows.length === 0) {
+      throw AppError.forbidden('Access Denied: You must be enrolled in this course to view its assessments.');
+    }
+
+    return assessment;
+  }
+
+  /**
+   * Track all submitted and graded assignments for a student
+   */
+  public async getMySubmissions(studentId: string) {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT s.*, a.title AS assessment_title, a.max_score,
+              c.title AS course_title, c.id AS course_id
+       FROM submissions s
+       JOIN assessments a ON a.id = s.assessment_id
+       JOIN modules m ON m.id = a.module_id
+       JOIN courses c ON c.id = m.course_id
+       WHERE s.student_id = ?
+       ORDER BY s.created_at DESC`,
+      [studentId]
+    );
+
+    return rows.map((r: any) => ({
+      id: r.id,
+      assessmentId: r.assessment_id,
+      fileUrl: r.file_url,
+      fileKey: r.file_key,
+      score: r.score,
+      feedback: r.feedback,
+      status: r.status,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+      assessment: {
+        title: r.assessment_title,
+        maxScore: r.max_score,
+      },
+      course: {
+        id: r.course_id,
+        title: r.course_title,
+      }
     }));
   }
 

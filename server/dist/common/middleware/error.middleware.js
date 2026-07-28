@@ -16,26 +16,23 @@ _next) => {
         message = err.message;
         details = err.details;
     }
-    // Handle Prisma Database constraint exceptions
-    else if (err.constructor && err.constructor.name.startsWith('PrismaClient')) {
-        const prismaErr = err;
-        logger_1.logger.error('Prisma DB error captured:', prismaErr);
-        if (prismaErr.code === 'P2002') {
-            statusCode = 409;
-            message = `Conflict: A record with that ${prismaErr.meta?.target?.join(', ') || 'key'} already exists.`;
-        }
-        else if (prismaErr.code === 'P2025') {
-            statusCode = 404;
-            message = 'Not Found: The requested database entity does not exist.';
-        }
-        else if (prismaErr.code === 'P2003') {
-            statusCode = 400;
-            message = 'Bad Request: Relational foreign key constraint failed.';
-        }
-        else {
-            statusCode = 400;
-            message = 'Database operation failed.';
-        }
+    // Handle MySQL database constraint exceptions
+    else if (err.code === 'ER_DUP_ENTRY') {
+        statusCode = 409;
+        message = 'Conflict: A record with that key already exists.';
+    }
+    else if (err.code === 'ER_NO_REFERENCED_ROW_2') {
+        statusCode = 400;
+        message = 'Bad Request: Relational foreign key constraint failed.';
+    }
+    else if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+        statusCode = 400;
+        message = 'Bad Request: Cannot delete record because it is referenced by other records.';
+    }
+    else if (err.code?.startsWith?.('ER_')) {
+        logger_1.logger.error('MySQL DB error captured:', err);
+        statusCode = 400;
+        message = 'Database operation failed.';
     }
     // Handle JWT parsing exceptions
     else if (err.name === 'TokenExpiredError') {

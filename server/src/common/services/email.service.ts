@@ -88,6 +88,69 @@ class EmailService {
 
     await this.sendEmail(studentEmail, subject, text, html);
   }
+
+  /**
+   * Account Verification Email
+   */
+  public async sendVerificationEmail(email: string, token: string): Promise<void> {
+    const subject = `Welcome to EduConnect Academy - Verify Your Email`;
+    // In a real application, you'd use a frontend URL from env config.
+    // Assuming frontend is running locally or has an env var for base URL.
+    // For now we just use the token in a generic URL for demonstration.
+    const verifyUrl = `${env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
+    
+    const text = `Hello,\n\nWelcome to EduConnect Academy! Please verify your email address by clicking the link below:\n\n${verifyUrl}\n\nThis link will expire in 24 hours.\n\nEduConnect Team`;
+    
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #4A90E2; text-align: center;">EduConnect Academy</h2>
+        <hr style="border: 0; border-top: 1px dashed #eee;">
+        <p>Hello,</p>
+        <p>Welcome to EduConnect Academy! Please verify your email address to activate your account.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${verifyUrl}" style="background-color: #4A90E2; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email</a>
+        </div>
+        <p style="font-size: 14px; color: #666;">Or copy and paste this link into your browser:</p>
+        <p style="font-size: 14px; color: #4A90E2; word-break: break-all;">${verifyUrl}</p>
+        <p style="font-size: 14px; color: #666;">This link will expire in 24 hours.</p>
+        <p style="color: #888; font-size: 12px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; text-align: center;">
+          This is an automated notification. Please do not reply directly to this mail.
+        </p>
+      </div>
+    `;
+
+    await this.sendEmail(email, subject, text, html);
+  }
+
+  /**
+   * Password Reset Email
+   */
+  public async sendPasswordResetEmail(email: string, token: string): Promise<void> {
+    const subject = `EduConnect Academy - Password Reset Request`;
+    const resetUrl = `${env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    
+    const text = `Hello,\n\nWe received a request to reset your password. Click the link below to set a new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour. If you didn't request this, you can safely ignore this email.\n\nEduConnect Team`;
+    
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #4A90E2; text-align: center;">EduConnect Academy</h2>
+        <hr style="border: 0; border-top: 1px dashed #eee;">
+        <p>Hello,</p>
+        <p>We received a request to reset your password. Click the button below to set a new password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="background-color: #4A90E2; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
+        </div>
+        <p style="font-size: 14px; color: #666;">Or copy and paste this link into your browser:</p>
+        <p style="font-size: 14px; color: #4A90E2; word-break: break-all;">${resetUrl}</p>
+        <p style="font-size: 14px; color: #666;">This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+        <p style="color: #888; font-size: 12px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; text-align: center;">
+          This is an automated notification. Please do not reply directly to this mail.
+        </p>
+      </div>
+    `;
+
+    await this.sendEmail(email, subject, text, html);
+  }
 }
 
 export const emailService = new EmailService();

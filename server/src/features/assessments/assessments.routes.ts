@@ -24,4 +24,10 @@ router.post('/submissions/:submissionId/grade', authenticate, authorize(UserRole
 // List all student submissions for a specific assessment (Tutors/Admins)
 router.get('/:assessmentId/submissions', authenticate, authorize(UserRole.TUTOR, UserRole.ADMIN), controller.listSubmissions);
 
+// Track all submitted and graded assignments across enrolled courses (Students)
+router.get('/my-submissions', authenticate, authorize(UserRole.STUDENT), controller.getMySubmissions);
+
+// View single assessment instructions and max score (Students)
+router.get('/:assessmentId', authenticate, authorize(UserRole.STUDENT), controller.getAssessmentById);
+
 export default router;

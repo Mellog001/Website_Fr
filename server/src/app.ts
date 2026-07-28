@@ -42,7 +42,6 @@ app.get('/health', (_req: Request, res: Response) => {
     uptime: process.uptime(),
     services: {
       database: 'UP',
-      redis: 'UP',
     },
   });
 });

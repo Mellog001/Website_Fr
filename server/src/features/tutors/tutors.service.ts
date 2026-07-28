@@ -34,6 +34,86 @@ export class TutorsService {
   }
 
   /**
+   * Fetch a paginated list of all verified tutors (Public)
+   */
+  public async getPublicTutors(page: number = 1, limit: number = 10) {
+    const offset = (page - 1) * limit;
+
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT tp.id, tp.bio, tp.qualifications, tp.competency_score, tp.verified_at,
+              u.id AS user_id_ref, u.email
+       FROM tutor_profiles tp
+       JOIN users u ON u.id = tp.user_id
+       WHERE tp.is_verified = TRUE AND tp.competency_status = 'PASSED'
+       ORDER BY tp.verified_at DESC
+       LIMIT ? OFFSET ?`,
+      [limit.toString(), offset.toString()] // Using string conversion to avoid mysql2 prepared statement issues with numbers in some configurations
+    );
+
+    const [countRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT COUNT(*) as total
+       FROM tutor_profiles tp
+       WHERE tp.is_verified = TRUE AND tp.competency_status = 'PASSED'`
+    );
+
+    const total = countRows[0].total;
+
+    const data = rows.map((r: any) => ({
+      id: r.id,
+      bio: r.bio,
+      qualifications: r.qualifications,
+      competencyScore: r.competency_score,
+      verifiedAt: r.verified_at,
+      user: {
+        id: r.user_id_ref,
+        // In a real app, you might want to mask the email or only show public names
+        email: r.email,
+      },
+    }));
+
+    return {
+      data,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Fetch detailed profile of a single verified tutor (Public)
+   */
+  public async getPublicTutorById(profileId: string) {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT tp.id, tp.bio, tp.qualifications, tp.competency_score, tp.verified_at,
+              u.id AS user_id_ref, u.email
+       FROM tutor_profiles tp
+       JOIN users u ON u.id = tp.user_id
+       WHERE tp.id = ? AND tp.is_verified = TRUE AND tp.competency_status = 'PASSED'`,
+      [profileId]
+    );
+
+    if (rows.length === 0) {
+      throw AppError.notFound('Verified tutor not found.');
+    }
+
+    const row = rows[0];
+    return {
+      id: row.id,
+      bio: row.bio,
+      qualifications: row.qualifications,
+      competencyScore: row.competency_score,
+      verifiedAt: row.verified_at,
+      user: {
+        id: row.user_id_ref,
+        email: row.email,
+      },
+    };
+  }
+
+  /**
    * Update tutor bio and qualifications
    */
   public async updateProfile(userId: string, data: { bio?: string; qualifications?: string[] }) {
@@ -70,7 +150,7 @@ export class TutorsService {
   /**
    * Request a tutor competency test for a specific subject
    */
-  public async requestCompetencyTest(userId: string, subjectId: string) {
+  public async requestCompetencyTest(userId: string, subjectId: string, submissionFileUrl: string, submissionFileKey: string) {
     const [profileRows] = await pool.execute<RowDataPacket[]>(
       'SELECT id FROM tutor_profiles WHERE user_id = ?',
       [userId]
@@ -101,8 +181,8 @@ export class TutorsService {
 
     const testId = uuidv4();
     await pool.execute(
-      'INSERT INTO tutor_competency_tests (id, tutor_profile_id, subject_id, status) VALUES (?, ?, ?, ?)',
-      [testId, profile.id, subjectId, CompetencyStatus.PENDING]
+      'INSERT INTO tutor_competency_tests (id, tutor_profile_id, subject_id, status, submission_file_url, submission_file_key) VALUES (?, ?, ?, ?, ?, ?)',
+      [testId, profile.id, subjectId, CompetencyStatus.PENDING, submissionFileUrl, submissionFileKey]
     );
 
     const test = {
@@ -110,6 +190,7 @@ export class TutorsService {
       tutorProfileId: profile.id,
       subjectId,
       status: CompetencyStatus.PENDING,
+      submissionFileUrl,
       subject: { name: subjectRows[0].name, code: subjectRows[0].code },
     };
 

@@ -6,10 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const app_1 = __importDefault(require("./app"));
 const env_1 = require("./config/env");
 const logger_1 = require("./config/logger");
-const prisma_1 = require("./config/prisma");
-const redis_1 = require("./config/redis");
+const database_1 = __importDefault(require("./config/database"));
+const job_processor_1 = require("./jobs/job-processor");
 const server = app_1.default.listen(env_1.env.PORT, () => {
     logger_1.logger.info(`🚀 EduConnect server is running in [${env_1.env.NODE_ENV}] mode on port ${env_1.env.PORT}`);
+    // Start the MySQL-backed background job processor
+    (0, job_processor_1.startJobProcessor)();
 });
 const gracefulShutdown = async (signal) => {
     logger_1.logger.info(`Received ${signal}. Starting graceful shutdown...`);
@@ -18,12 +20,11 @@ const gracefulShutdown = async (signal) => {
         logger_1.logger.info('HTTP server closed.');
     });
     try {
-        // Disconnect Prisma DB
-        await prisma_1.prisma.$disconnect();
-        logger_1.logger.info('Prisma database connection disconnected.');
-        // Disconnect Redis
-        await redis_1.redisConnection.quit();
-        logger_1.logger.info('Redis client disconnected.');
+        // Stop the background job processor
+        (0, job_processor_1.stopJobProcessor)();
+        // Disconnect MySQL pool
+        await database_1.default.end();
+        logger_1.logger.info('MySQL database connection pool closed.');
         logger_1.logger.info('Graceful shutdown completed successfully. Exiting.');
         process.exit(0);
     }
