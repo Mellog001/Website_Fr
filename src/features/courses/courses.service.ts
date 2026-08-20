@@ -204,6 +204,8 @@ export class CoursesService {
   ) {
     const { subjectId, search, sortBy, page, limit } = query;
     const offset = (page - 1) * limit;
+    const safeLimit = Number.isInteger(Number(limit)) ? Number(limit) : 10;
+    const safeOffset = Number.isInteger(Number(offset)) ? Number(offset) : 0;
 
     // Build WHERE clauses dynamically
     const conditions: string[] = [];
@@ -239,10 +241,6 @@ export class CoursesService {
     );
     const total = countRows[0].total;
 
-        // Ensure limit/offset are real integers (never trust query params blindly)
-    const safeLimit = Number.isInteger(Number(limit)) ? Number(limit) : 10;
-    const safeOffset = Number.isInteger(Number(offset)) ? Number(offset) : 0;
-
     // Fetch courses with subject and tutor info
     const [courses] = await pool.execute<RowDataPacket[]>(
       `SELECT c.*, 
@@ -257,7 +255,6 @@ export class CoursesService {
        LIMIT ${safeLimit} OFFSET ${safeOffset}`,
       params
     );
-    
 
     // Map to expected shape
     const mapped = courses.map((c: any) => ({

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — EduConnect</title>
+<link rel="stylesheet" href="CSS/style.css">
+</head>
+<body>
+
+<header>
+  <h2 id="dashboardTitle">Dashboard</h2>
+  <nav>
+    <a href="courses.html">Courses</a>
+    <a href="profile.html">Profile</a>
+    <a href="about.html">About Us</a>
+    <a href="#" id="logoutLink">Logout</a>
+  </nav>
+</header>
+
+<section class="dashboard">
+  <h3 id="welcomeMsg">Welcome</h3>
+  <p id="welcomeSub">Select a course to start learning.</p>
+
+  <div class="dashboard-cards" id="courseCards">
+    <p>Loading your courses...</p>
+  </div>
+</section>
+
+<script src="js/api.js"></script>
+<script>
+  requireAuth();
+
+  const claims = Auth.decodeAccessToken();
+  const user = Auth.getUser();
+  const email = user?.email || claims?.email || "there";
+  const role = user?.role || claims?.role || "STUDENT";
+
+  document.getElementById("dashboardTitle").textContent =
+    role === "TUTOR" ? "Tutor Dashboard" : role === "ADMIN" ? "Admin Dashboard" : "Student Dashboard";
+  document.getElementById("welcomeMsg").textContent = `Welcome back, ${email}`;
+
+  document.getElementById("logoutLink").addEventListener("click", async (e) => {
+    e.preventDefault();
+    await Api.logout();
+    window.location.href = "login.html";
+  });
+
+  function formatKES(amount) {
+    return new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", maximumFractionDigits: 0 }).format(amount);
+  }
+
+  async function loadCourses() {
+    const cardsEl = document.getElementById("courseCards");
+    const subEl = document.getElementById("welcomeSub");
+
+    const result = await Api.getCatalog();
+    if (!result || !result.ok) {
+      cardsEl.innerHTML = `<p class="form-error">${(result && result.message) || "Couldn't load courses."}</p>`;
+      return;
+    }
+
+    const courses = result.data.courses;
+
+    if (role === "TUTOR") {
+      subEl.textContent = "Manage your courses and track student progress.";
+    } else {
+      subEl.textContent = "Browse available courses, or check ones you're already enrolled in from the Courses page.";
+    }
+
+    if (courses.length === 0) {
+      cardsEl.innerHTML = "<p>No courses published yet.</p>";
+      return;
+    }
+
+    cardsEl.innerHTML = "";
+    courses.slice(0, 6).forEach((course) => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <h4>${course.title}</h4>
+        <p>${course.subject?.name || "General"} · ${formatKES(course.price)}</p>
+        <a href="courses.html">Open</a>
+      `;
+      cardsEl.appendChild(card);
+    });
+  }
+
+  loadCourses();
+</script>
+
+</body>
+</html>
