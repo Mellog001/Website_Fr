@@ -4,6 +4,36 @@ import { TutorsService } from './tutors.service';
 const tutorsService = new TutorsService();
 
 export class TutorsController {
+  public getPublicTutors = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const result = await tutorsService.getPublicTutors(page, limit);
+
+      res.status(200).json({
+        status: 'success',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getPublicTutorById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { profileId } = req.params;
+      const result = await tutorsService.getPublicTutorById(profileId);
+
+      res.status(200).json({
+        status: 'success',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public getProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const result = await tutorsService.getProfile(req.user!.id);
@@ -33,8 +63,13 @@ export class TutorsController {
 
   public requestCompetencyTest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { subjectId } = req.body;
-      const result = await tutorsService.requestCompetencyTest(req.user!.id, subjectId);
+      const { subjectId, submissionFileUrl, submissionFileKey } = req.body;
+      const result = await tutorsService.requestCompetencyTest(
+        req.user!.id, 
+        subjectId, 
+        submissionFileUrl, 
+        submissionFileKey
+      );
 
       res.status(201).json({
         status: 'success',

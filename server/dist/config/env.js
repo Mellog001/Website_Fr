@@ -10,16 +10,10 @@ dotenv_1.default.config();
 const envSchema = zod_1.z.object({
     PORT: zod_1.z.coerce.number().default(5000),
     NODE_ENV: zod_1.z.enum(['development', 'production', 'test']).default('development'),
-    DATABASE_URL: zod_1.z.string().url(),
+    DATABASE_URL: zod_1.z.string().min(1),
     JWT_ACCESS_SECRET: zod_1.z.string().min(32),
     JWT_REFRESH_SECRET: zod_1.z.string().min(32),
-    REDIS_URL: zod_1.z.string().url().default('redis://localhost:6379'),
-    // AWS S3 / Cloudflare R2
-    AWS_ACCESS_KEY_ID: zod_1.z.string(),
-    AWS_SECRET_ACCESS_KEY: zod_1.z.string(),
-    AWS_REGION: zod_1.z.string().default('us-east-1'),
-    AWS_S3_BUCKET_NAME: zod_1.z.string(),
-    AWS_S3_ENDPOINT: zod_1.z.string().optional(), // For Cloudflare R2 or MinIO compatibility
+    FRONTEND_URL: zod_1.z.string().url().default('http://localhost:3000'),
     // M-Pesa Daraja
     MPESA_CONSUMER_KEY: zod_1.z.string(),
     MPESA_CONSUMER_SECRET: zod_1.z.string(),

@@ -4,6 +4,33 @@ exports.TutorsController = void 0;
 const tutors_service_1 = require("./tutors.service");
 const tutorsService = new tutors_service_1.TutorsService();
 class TutorsController {
+    getPublicTutors = async (req, res, next) => {
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 10;
+            const result = await tutorsService.getPublicTutors(page, limit);
+            res.status(200).json({
+                status: 'success',
+                data: result,
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    };
+    getPublicTutorById = async (req, res, next) => {
+        try {
+            const { profileId } = req.params;
+            const result = await tutorsService.getPublicTutorById(profileId);
+            res.status(200).json({
+                status: 'success',
+                data: result,
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    };
     getProfile = async (req, res, next) => {
         try {
             const result = await tutorsService.getProfile(req.user.id);
@@ -31,8 +58,8 @@ class TutorsController {
     };
     requestCompetencyTest = async (req, res, next) => {
         try {
-            const { subjectId } = req.body;
-            const result = await tutorsService.requestCompetencyTest(req.user.id, subjectId);
+            const { subjectId, submissionFileUrl, submissionFileKey } = req.body;
+            const result = await tutorsService.requestCompetencyTest(req.user.id, subjectId, submissionFileUrl, submissionFileKey);
             res.status(201).json({
                 status: 'success',
                 message: 'Competency test evaluation requested successfully',

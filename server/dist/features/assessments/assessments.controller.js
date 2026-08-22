@@ -60,6 +60,31 @@ class AssessmentsController {
             next(error);
         }
     };
+    getAssessmentById = async (req, res, next) => {
+        try {
+            const { assessmentId } = req.params;
+            const result = await assessmentsService.getAssessmentById(req.user.id, assessmentId);
+            res.status(200).json({
+                status: 'success',
+                data: result,
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    };
+    getMySubmissions = async (req, res, next) => {
+        try {
+            const result = await assessmentsService.getMySubmissions(req.user.id);
+            res.status(200).json({
+                status: 'success',
+                data: result,
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    };
 }
 exports.AssessmentsController = AssessmentsController;
 exports.default = AssessmentsController;

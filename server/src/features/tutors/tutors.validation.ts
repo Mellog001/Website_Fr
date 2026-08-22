@@ -11,6 +11,8 @@ export const updateProfileSchema = z.object({
 export const requestCompetencyTestSchema = z.object({
   body: z.object({
     subjectId: z.string().uuid('Invalid subject ID format'),
+    submissionFileUrl: z.string().url('Submission file URL must be a valid URL'),
+    submissionFileKey: z.string().min(1, 'Submission file key is required'),
   }),
 });
 
