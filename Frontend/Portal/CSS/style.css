@@ -65,7 +65,7 @@ text-decoration:none;
     text-decoration: none;
     border-radius: 5px;
     font-weight: bold;
-    transition: background 0.3s ease;
+    transition: bg 0.3s ease;
 }
 
 .btn:hover {
@@ -311,6 +311,9 @@ border-radius:10px;
 
 /* ---- Enrollment modal ---- */
 
+.modal-backdrop[hidden] {
+  display: none !important;
+}
 .modal-backdrop {
   position: fixed;
   inset: 0;
