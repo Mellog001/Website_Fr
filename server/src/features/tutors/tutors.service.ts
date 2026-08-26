@@ -47,7 +47,7 @@ export class TutorsService {
        WHERE tp.is_verified = TRUE AND tp.competency_status = 'PASSED'
        ORDER BY tp.verified_at DESC
        LIMIT ? OFFSET ?`,
-      [limit.toString(), offset.toString()] // Using string conversion to avoid mysql2 prepared statement issues with numbers in some configurations
+      [limit.toString(), offset.toString()]
     );
 
     const [countRows] = await pool.execute<RowDataPacket[]>(
@@ -66,7 +66,6 @@ export class TutorsService {
       verifiedAt: r.verified_at,
       user: {
         id: r.user_id_ref,
-        // In a real app, you might want to mask the email or only show public names
         email: r.email,
       },
     }));
@@ -145,6 +144,62 @@ export class TutorsService {
 
     logger.info(`📝 Tutor profile updated for user ${userId}`);
     return updated[0];
+  }
+
+  /**
+   * NEW: Create a subject (verified tutors only)
+   */
+  public async createSubject(data: { name: string; code?: string; description?: string }) {
+    const { name, code, description } = data;
+
+    // Generate a code if not provided
+    let subjectCode = code;
+    if (!subjectCode) {
+      subjectCode = name
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '')
+        .substring(0, 8)
+        .padEnd(8, 'X');
+      
+      // Add random numbers to make it unique
+      subjectCode = subjectCode + Math.floor(Math.random() * 1000);
+    }
+
+    // Check if subject with same name exists
+    const [existing] = await pool.execute<RowDataPacket[]>(
+      'SELECT id, name, code FROM subjects WHERE name = ? OR code = ?',
+      [name, subjectCode]
+    );
+
+    if (existing && existing.length > 0) {
+      // If subject exists, return the existing one
+      logger.info(`📚 Subject already exists: ${name} (${existing[0].code})`);
+      return existing[0];
+    }
+
+    // Create new subject
+    const id = uuidv4();
+    await pool.execute(
+      `INSERT INTO subjects (id, name, code, description) VALUES (?, ?, ?, ?)`,
+      [id, name, subjectCode, description || null]
+    );
+
+    logger.info(`📚 Subject created: ${name} (${subjectCode})`);
+
+    return { id, name, code: subjectCode, description: description || null };
+  }
+
+  /**
+   * NEW: Get all subjects
+   */
+  public async getSubjects() {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT id, name, code, description, created_at 
+       FROM subjects 
+       ORDER BY name ASC`
+    );
+
+    return { subjects: rows || [] };
   }
 
   /**

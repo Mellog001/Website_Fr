@@ -33,4 +33,13 @@ router.post('/materials', authenticate, authorize(UserRole.TUTOR), validate(crea
 // Details API (Open outline view, locks full materials inside gated details)
 router.get('/:courseId', optionalAuthenticate, controller.getCourseDetails);
 
+// Enrollment endpoints
+router.post('/:courseId/enroll', authenticate, authorize(UserRole.STUDENT), controller.enrollInCourse);
+router.get('/:courseId/enrollment-status', authenticate, controller.getEnrollmentStatus);
+
+
+// Admin enrollment management
+// router.get('/enrollments/pending', authenticate, authorize(UserRole.ADMIN), controller.getPendingEnrollments);
+// router.post('/enrollments/:enrollmentId/activate', authenticate, authorize(UserRole.ADMIN), controller.activateEnrollment);
+
 export default router;

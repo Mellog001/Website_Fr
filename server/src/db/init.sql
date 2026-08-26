@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS courses (
   tutor_id VARCHAR(36) NOT NULL,
   is_published BOOLEAN NOT NULL DEFAULT FALSE,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  image_url VARCHAR(1024) NULL,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_courses_subject_id (subject_id),
   INDEX idx_courses_tutor_id (tutor_id),
@@ -74,6 +75,8 @@ CREATE TABLE IF NOT EXISTS courses (
   CONSTRAINT fk_courses_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,
   CONSTRAINT fk_courses_tutor FOREIGN KEY (tutor_id) REFERENCES tutor_profiles(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ALTER TABLE courses ADD COLUMN image_url VARCHAR(1024) NULL;
 
 -- ============================================
 -- MODULES
@@ -282,3 +285,11 @@ CREATE TABLE IF NOT EXISTS scheduled_jobs (
   INDEX idx_scheduled_jobs_poll (queue_name, status, run_at),
   INDEX idx_scheduled_jobs_run_at (run_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- First, check current status values
+SELECT COLUMN_TYPE FROM information_schema.COLUMNS 
+WHERE TABLE_NAME = 'enrollments' AND COLUMN_NAME = 'status';
+
+-- If needed, update the ENUM to include PENDING
+ALTER TABLE enrollments MODIFY COLUMN status ENUM('PENDING', 'ACTIVE', 'COMPLETED', 'DROPPED', 'REJECTED') DEFAULT 'PENDING';

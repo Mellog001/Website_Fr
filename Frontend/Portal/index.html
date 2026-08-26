@@ -1,41 +1,1827 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>EduConnect</title>
+  <title>EduConnect — Learn. Grow. Succeed.</title>
 
-<link rel="stylesheet" href="CSS/style.css">
+  <meta
+    name="description"
+    content="EduConnect connects learners with expert tutors through structured, engaging programming and mathematics courses."
+  >
 
+  <link rel="stylesheet" href="CSS/style.css">
+
+  <style>
+    /* =========================================================
+       EDUCONNECT LANDING PAGE
+       Professional • Modern • Responsive • Not overly bright
+       ========================================================= */
+
+    :root {
+      --ec-navy: #102a43;
+      --ec-navy-dark: #0b1f33;
+      --ec-blue: #1f5f8b;
+      --ec-blue-light: #eaf3f8;
+      --ec-slate: #486581;
+      --ec-text: #243b53;
+      --ec-muted: #627d98;
+      --ec-border: #d9e2ec;
+      --ec-bg: #f7f9fc;
+      --ec-white: #ffffff;
+      --ec-success: #287d5a;
+      --ec-shadow: 0 12px 35px rgba(16, 42, 67, 0.08);
+      --ec-shadow-hover: 0 20px 45px rgba(16, 42, 67, 0.14);
+      --ec-radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+      color: var(--ec-text);
+      background: var(--ec-white);
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    /* =========================================================
+       HEADER
+       ========================================================= */
+
+    .ec-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+
+      background: rgba(255, 255, 255, 0.96);
+      border-bottom: 1px solid rgba(217, 226, 236, 0.85);
+
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .ec-header-inner {
+      width: min(1180px, calc(100% - 40px));
+      min-height: 76px;
+      margin: 0 auto;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 30px;
+    }
+
+    .ec-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+
+      text-decoration: none;
+    }
+
+    .ec-brand-mark {
+      width: 40px;
+      height: 40px;
+
+      display: grid;
+      place-items: center;
+
+      background: var(--ec-navy);
+      color: white;
+
+      border-radius: 10px;
+
+      font-size: 17px;
+      font-weight: 800;
+
+      box-shadow: 0 5px 15px rgba(16, 42, 67, 0.18);
+    }
+
+    .ec-brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .ec-brand-name {
+      color: var(--ec-navy);
+      font-size: 1.18rem;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+    }
+
+    .ec-brand-tagline {
+      color: var(--ec-muted);
+      font-size: 0.67rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    .ec-nav {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .ec-nav a {
+      text-decoration: none;
+      color: var(--ec-slate);
+
+      padding: 9px 13px;
+      border-radius: 8px;
+
+      font-size: 0.92rem;
+      font-weight: 550;
+
+      transition:
+        background 0.2s ease,
+        color 0.2s ease;
+    }
+
+    .ec-nav a:hover {
+      background: var(--ec-bg);
+      color: var(--ec-navy);
+    }
+
+    .ec-nav .ec-nav-signup {
+      background: var(--ec-navy);
+      color: white;
+      padding: 10px 17px;
+    }
+
+    .ec-nav .ec-nav-signup:hover {
+      background: var(--ec-navy-dark);
+      color: white;
+    }
+
+    /* =========================================================
+       MAIN CONTAINER
+       ========================================================= */
+
+    .ec-container {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    /* =========================================================
+       HERO
+       ========================================================= */
+
+    .ec-hero {
+      position: relative;
+      overflow: hidden;
+
+      margin-top: 28px;
+
+      min-height: 500px;
+
+      display: flex;
+      align-items: center;
+
+      border-radius: 20px;
+
+      background:
+        radial-gradient(
+          circle at 90% 10%,
+          rgba(80, 130, 165, 0.28),
+          transparent 35%
+        ),
+        radial-gradient(
+          circle at 15% 100%,
+          rgba(31, 95, 139, 0.22),
+          transparent 35%
+        ),
+        linear-gradient(
+          135deg,
+          #102a43 0%,
+          #163d5c 55%,
+          #1f5f8b 100%
+        );
+
+      color: white;
+
+      box-shadow:
+        0 25px 60px rgba(16, 42, 67, 0.18);
+    }
+
+    .ec-hero::before {
+      content: "";
+
+      position: absolute;
+      width: 320px;
+      height: 320px;
+
+      right: -130px;
+      bottom: -160px;
+
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 50%;
+    }
+
+    .ec-hero::after {
+      content: "";
+
+      position: absolute;
+      width: 220px;
+      height: 220px;
+
+      right: 20px;
+      bottom: -110px;
+
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 50%;
+    }
+
+    .ec-hero-content {
+      position: relative;
+      z-index: 2;
+
+      max-width: 730px;
+
+      padding: 72px 65px;
+    }
+
+    .ec-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+
+      padding: 7px 12px;
+
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+
+      background: rgba(255, 255, 255, 0.07);
+
+      color: rgba(255, 255, 255, 0.9);
+
+      font-size: 0.76rem;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .ec-eyebrow-dot {
+      width: 7px;
+      height: 7px;
+
+      background: #8fc6a9;
+      border-radius: 50%;
+    }
+
+    .ec-hero h1 {
+      margin: 23px 0 18px;
+
+      font-size: clamp(2.4rem, 5vw, 4.15rem);
+      line-height: 1.07;
+
+      letter-spacing: -0.045em;
+      font-weight: 760;
+    }
+
+    .ec-hero h1 span {
+      color: #b8d3e3;
+    }
+
+    .ec-hero-description {
+      max-width: 620px;
+
+      margin: 0 0 30px;
+
+      color: rgba(255, 255, 255, 0.78);
+
+      font-size: clamp(1rem, 2vw, 1.18rem);
+      line-height: 1.75;
+    }
+
+    .ec-hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .ec-primary-btn,
+    .ec-secondary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      min-height: 48px;
+
+      padding: 0 21px;
+
+      border-radius: 9px;
+
+      text-decoration: none;
+
+      font-size: 0.92rem;
+      font-weight: 650;
+
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+    }
+
+    .ec-primary-btn {
+      background: white;
+      color: var(--ec-navy);
+
+      box-shadow: 0 7px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .ec-primary-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.17);
+    }
+
+    .ec-secondary-btn {
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .ec-secondary-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    /* =========================================================
+       TRUST STRIP
+       ========================================================= */
+
+    .ec-trust-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+
+      margin: 0 auto;
+      padding: 0;
+
+      border-bottom: 1px solid var(--ec-border);
+    }
+
+    .ec-trust-item {
+      padding: 28px 25px;
+
+      display: flex;
+      align-items: center;
+      gap: 14px;
+
+      border-right: 1px solid var(--ec-border);
+    }
+
+    .ec-trust-item:last-child {
+      border-right: none;
+    }
+
+    .ec-trust-icon {
+      flex: 0 0 auto;
+
+      width: 42px;
+      height: 42px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 10px;
+
+      background: var(--ec-blue-light);
+      color: var(--ec-blue);
+
+      font-size: 18px;
+    }
+
+    .ec-trust-text strong {
+      display: block;
+
+      color: var(--ec-navy);
+
+      font-size: 0.91rem;
+      font-weight: 700;
+    }
+
+    .ec-trust-text span {
+      display: block;
+
+      margin-top: 2px;
+
+      color: var(--ec-muted);
+
+      font-size: 0.8rem;
+    }
+
+    /* =========================================================
+       INTRO SECTION
+       ========================================================= */
+
+    .ec-intro {
+      padding: 82px 0 35px;
+
+      text-align: center;
+    }
+
+    .ec-section-label {
+      display: block;
+
+      margin-bottom: 10px;
+
+      color: var(--ec-blue);
+
+      font-size: 0.75rem;
+      font-weight: 750;
+
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .ec-intro h2 {
+      max-width: 700px;
+
+      margin: 0 auto 13px;
+
+      color: var(--ec-navy);
+
+      font-size: clamp(1.8rem, 4vw, 2.65rem);
+      line-height: 1.2;
+
+      letter-spacing: -0.035em;
+    }
+
+    .ec-intro p {
+      max-width: 650px;
+
+      margin: 0 auto;
+
+      color: var(--ec-muted);
+
+      font-size: 1rem;
+    }
+
+    /* =========================================================
+       COURSES
+       ========================================================= */
+
+    .ec-courses-section {
+      padding: 30px 0 90px;
+    }
+
+    .ec-courses-heading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+
+      gap: 20px;
+
+      margin-bottom: 25px;
+    }
+
+    .ec-courses-heading h2 {
+      margin: 0;
+
+      color: var(--ec-navy);
+
+      font-size: 1.65rem;
+      letter-spacing: -0.025em;
+    }
+
+    .ec-courses-heading p {
+      margin: 5px 0 0;
+
+      color: var(--ec-muted);
+      font-size: 0.9rem;
+    }
+
+    .courses-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(auto-fill, minmax(270px, 1fr));
+
+      gap: 22px;
+
+      padding: 0;
+
+      max-width: none;
+      margin: 0;
+    }
+
+    /* =========================================================
+       COURSE CARD
+       ========================================================= */
+
+    .course-card {
+      overflow: hidden;
+
+      background: white;
+
+      border: 1px solid var(--ec-border);
+      border-radius: var(--ec-radius);
+
+      box-shadow: 0 4px 15px rgba(16, 42, 67, 0.045);
+
+      transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
+    }
+
+    .course-card:hover {
+      transform: translateY(-5px);
+
+      border-color: #c4d2df;
+
+      box-shadow: var(--ec-shadow-hover);
+    }
+
+    .course-card .course-image {
+      display: block;
+
+      width: 100%;
+      height: 185px;
+
+      object-fit: cover;
+
+      margin: 0;
+
+      border-radius: 0;
+
+      background: #edf2f7;
+    }
+
+    .course-card > h3,
+    .course-card > .course-subject,
+    .course-card > .course-description,
+    .course-card > .course-price,
+    .course-card > .btn-enroll,
+    .course-card > .tutor-info {
+      margin-left: 20px;
+      margin-right: 20px;
+    }
+
+    .course-card h3 {
+      margin-top: 18px;
+      margin-bottom: 7px;
+
+      color: var(--ec-navy);
+
+      font-size: 1.08rem;
+      line-height: 1.35;
+
+      letter-spacing: -0.015em;
+    }
+
+    .course-card .course-subject {
+      margin-bottom: 10px;
+
+      color: var(--ec-blue);
+
+      font-size: 0.76rem;
+      font-weight: 700;
+
+      text-transform: uppercase;
+      letter-spacing: 0.055em;
+    }
+
+    .course-card .course-description {
+      min-height: 48px;
+
+      margin-bottom: 14px;
+
+      color: var(--ec-muted);
+
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
+    .course-card .course-price {
+      margin-bottom: 15px;
+
+      color: var(--ec-success);
+
+      font-size: 1.18rem;
+      font-weight: 750;
+    }
+
+    .course-card .btn-enroll {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      width: calc(100% - 40px);
+
+      min-height: 43px;
+
+      padding: 9px 16px;
+
+      background: var(--ec-navy);
+      color: white;
+
+      border-radius: 8px;
+
+      text-decoration: none;
+
+      font-size: 0.86rem;
+      font-weight: 650;
+
+      transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+    }
+
+    .course-card .btn-enroll:hover {
+      background: var(--ec-navy-dark);
+      transform: translateY(-1px);
+    }
+
+    .course-card .tutor-info {
+      margin-top: 17px;
+      padding-top: 13px;
+      padding-bottom: 18px;
+
+      border-top: 1px solid #edf1f5;
+
+      color: var(--ec-muted);
+
+      font-size: 0.76rem;
+    }
+
+    /* =========================================================
+       LOADING / EMPTY STATES
+       ========================================================= */
+
+    .loading-spinner,
+    .no-courses {
+      grid-column: 1 / -1;
+
+      padding: 60px 25px;
+
+      text-align: center;
+
+      background: var(--ec-bg);
+
+      border: 1px dashed var(--ec-border);
+      border-radius: var(--ec-radius);
+
+      color: var(--ec-muted);
+    }
+
+    .loading-spinner p,
+    .no-courses p {
+      margin: 0;
+    }
+
+    .no-courses a {
+      color: var(--ec-blue);
+      font-weight: 650;
+    }
+
+    /* =========================================================
+       VALUE SECTION
+       ========================================================= */
+
+    .ec-value-section {
+      padding: 75px 0;
+
+      background: var(--ec-bg);
+
+      border-top: 1px solid #edf1f5;
+      border-bottom: 1px solid #edf1f5;
+    }
+
+    .ec-value-header {
+      max-width: 680px;
+
+      margin: 0 auto 40px;
+
+      text-align: center;
+    }
+
+    .ec-value-header h2 {
+      margin: 0 0 10px;
+
+      color: var(--ec-navy);
+
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      line-height: 1.2;
+
+      letter-spacing: -0.035em;
+    }
+
+    .ec-value-header p {
+      margin: 0;
+
+      color: var(--ec-muted);
+    }
+
+    .ec-value-grid {
+      display: grid;
+
+      grid-template-columns: repeat(3, 1fr);
+
+      gap: 20px;
+    }
+
+    .ec-value-card {
+      padding: 28px;
+
+      background: white;
+
+      border: 1px solid var(--ec-border);
+      border-radius: 13px;
+
+      box-shadow: 0 5px 20px rgba(16, 42, 67, 0.035);
+    }
+
+    .ec-value-number {
+      color: var(--ec-blue);
+
+      font-size: 0.75rem;
+      font-weight: 750;
+
+      letter-spacing: 0.08em;
+    }
+
+    .ec-value-card h3 {
+      margin: 14px 0 8px;
+
+      color: var(--ec-navy);
+
+      font-size: 1.05rem;
+    }
+
+    .ec-value-card p {
+      margin: 0;
+
+      color: var(--ec-muted);
+
+      font-size: 0.86rem;
+      line-height: 1.65;
+    }
+
+    /* =========================================================
+       FINAL CTA
+       ========================================================= */
+
+    .ec-final-cta {
+      padding: 90px 0;
+    }
+
+    .ec-final-cta-box {
+      position: relative;
+      overflow: hidden;
+
+      padding: 58px 50px;
+
+      background: var(--ec-navy);
+
+      color: white;
+
+      border-radius: 18px;
+
+      text-align: center;
+    }
+
+    .ec-final-cta-box::after {
+      content: "";
+
+      position: absolute;
+
+      width: 280px;
+      height: 280px;
+
+      right: -120px;
+      top: -150px;
+
+      border: 1px solid rgba(255, 255, 255, 0.08);
+
+      border-radius: 50%;
+    }
+
+    .ec-final-cta-box h2,
+    .ec-final-cta-box p,
+    .ec-final-cta-box a {
+      position: relative;
+      z-index: 2;
+    }
+
+    .ec-final-cta-box h2 {
+      max-width: 650px;
+
+      margin: 0 auto 12px;
+
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      line-height: 1.2;
+
+      letter-spacing: -0.03em;
+    }
+
+    .ec-final-cta-box p {
+      max-width: 560px;
+
+      margin: 0 auto 25px;
+
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    /* =========================================================
+       FOOTER
+       ========================================================= */
+
+    .ec-footer {
+      padding: 45px 0 25px;
+
+      background: #091c2d;
+
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .ec-footer-main {
+      display: grid;
+
+      grid-template-columns: 1.5fr 1fr 1fr;
+
+      gap: 45px;
+
+      padding-bottom: 35px;
+    }
+
+    .ec-footer-brand {
+      max-width: 330px;
+    }
+
+    .ec-footer-brand-name {
+      margin-bottom: 10px;
+
+      color: white;
+
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .ec-footer-brand p {
+      margin: 0;
+
+      font-size: 0.83rem;
+      line-height: 1.7;
+    }
+
+    .ec-footer-column h4 {
+      margin: 0 0 13px;
+
+      color: white;
+
+      font-size: 0.84rem;
+
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .ec-footer-column a {
+      display: block;
+
+      width: fit-content;
+
+      margin-bottom: 8px;
+
+      color: rgba(255, 255, 255, 0.62);
+
+      text-decoration: none;
+
+      font-size: 0.82rem;
+
+      transition: color 0.2s ease;
+    }
+
+    .ec-footer-column a:hover {
+      color: white;
+    }
+
+    .ec-footer-bottom {
+      padding-top: 22px;
+
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+      font-size: 0.75rem;
+
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @media (max-width: 900px) {
+      .ec-hero-content {
+        padding: 60px 45px;
+      }
+
+      .ec-value-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .ec-footer-main {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .ec-footer-brand {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .ec-header-inner {
+        width: min(100% - 28px, 1180px);
+        min-height: 68px;
+      }
+
+      .ec-nav {
+        gap: 2px;
+      }
+
+      .ec-nav a {
+        padding: 7px 8px;
+        font-size: 0.78rem;
+      }
+
+      .ec-nav .ec-nav-signup {
+        padding: 8px 11px;
+      }
+
+      .ec-brand-tagline {
+        display: none;
+      }
+
+      .ec-brand-mark {
+        width: 36px;
+        height: 36px;
+      }
+
+      .ec-brand-name {
+        font-size: 1rem;
+      }
+
+      .ec-container {
+        width: min(100% - 28px, 1180px);
+      }
+
+      .ec-hero {
+        margin-top: 15px;
+        min-height: auto;
+        border-radius: 14px;
+      }
+
+      .ec-hero-content {
+        padding: 48px 27px 52px;
+      }
+
+      .ec-hero h1 {
+        font-size: clamp(2.15rem, 10vw, 3.1rem);
+      }
+
+      .ec-hero-description {
+        font-size: 0.95rem;
+      }
+
+      .ec-hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .ec-primary-btn,
+      .ec-secondary-btn {
+        width: 100%;
+      }
+
+      .ec-trust-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .ec-trust-item {
+        border-right: none;
+        border-bottom: 1px solid var(--ec-border);
+        padding: 20px 8px;
+      }
+
+      .ec-trust-item:last-child {
+        border-bottom: none;
+      }
+
+      .ec-intro {
+        padding: 60px 0 25px;
+      }
+
+      .ec-courses-section {
+        padding-bottom: 65px;
+      }
+
+      .ec-courses-heading {
+        display: block;
+      }
+
+      .ec-courses-heading h2 {
+        font-size: 1.45rem;
+      }
+
+      .courses-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .ec-value-section {
+        padding: 60px 0;
+      }
+
+      .ec-value-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .ec-final-cta {
+        padding: 60px 0;
+      }
+
+      .ec-final-cta-box {
+        padding: 45px 25px;
+        border-radius: 14px;
+      }
+
+      .ec-footer-main {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+
+      .ec-footer-brand {
+        grid-column: auto;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .ec-nav a[href="about.html"] {
+        display: none;
+      }
+
+      .ec-header-inner {
+        gap: 10px;
+      }
+
+      .ec-hero-content {
+        padding-left: 21px;
+        padding-right: 21px;
+      }
+
+      .ec-eyebrow {
+        font-size: 0.68rem;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<header>
+  <!-- =========================================================
+       HEADER
+       ========================================================= -->
 
-<h1>EduConnect</h1>
+  <header class="ec-header">
 
-<nav>
+    <div class="ec-header-inner">
 
-<a href="login.html">Login</a>
-<a href="signup.html">Sign Up</a>
-<a href="about.html">About Us</a>
+      <a href="index.html" class="ec-brand">
 
-</nav>
+        <span class="ec-brand-mark">
+          EC
+        </span>
 
-</header>
+        <span class="ec-brand-text">
+          <span class="ec-brand-name">
+            EduConnect
+          </span>
+
+          <span class="ec-brand-tagline">
+            Learn. Grow. Succeed.
+          </span>
+        </span>
+
+      </a>
+
+      <nav class="ec-nav" aria-label="Main navigation">
+
+        <a href="#courses">
+          Courses
+        </a>
+
+        <a href="about.html">
+          About Us
+        </a>
+
+        <a href="login.html">
+          Login
+        </a>
+
+        <a href="signup.html" class="ec-nav-signup">
+          Get Started
+        </a>
+
+      </nav>
+
+    </div>
+
+  </header>
 
 
-<section class="hero">
+  <main>
 
-<h2>Learn Programming and Mathematics with us</h2>
+    <!-- =======================================================
+         HERO
+         ======================================================= -->
 
-<p>Join interactive tutoring classes today.</p>
+    <div class="ec-container">
 
-<a class="btn" href="signup.html">Start Learning!</a>
+      <section class="ec-hero">
 
-</section>
+        <div class="ec-hero-content">
+
+          <div class="ec-eyebrow">
+            <span class="ec-eyebrow-dot"></span>
+            Quality learning, built around you
+          </div>
+
+          <h1>
+            Learn with purpose.
+            <span>Grow with confidence.</span>
+          </h1>
+
+          <p class="ec-hero-description">
+            EduConnect brings together structured courses, experienced
+            tutors and practical learning experiences to help students
+            build skills that matter.
+          </p>
+
+          <div class="ec-hero-actions">
+
+            <a
+              href="signup.html"
+              class="ec-primary-btn"
+            >
+              Start Learning
+            </a>
+
+            <a
+              href="#courses"
+              class="ec-secondary-btn"
+            >
+              Explore Courses
+            </a>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =====================================================
+           TRUST STRIP
+           ===================================================== -->
+
+      <section class="ec-trust-strip">
+
+        <div class="ec-trust-item">
+
+          <div class="ec-trust-icon">
+            ✓
+          </div>
+
+          <div class="ec-trust-text">
+
+            <strong>
+              Structured Learning
+            </strong>
+
+            <span>
+              Learn through organized courses
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <div class="ec-trust-item">
+
+          <div class="ec-trust-icon">
+            ◆
+          </div>
+
+          <div class="ec-trust-text">
+
+            <strong>
+              Expert Tutors
+            </strong>
+
+            <span>
+              Learn from dedicated instructors
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <div class="ec-trust-item">
+
+          <div class="ec-trust-icon">
+            ↗
+          </div>
+
+          <div class="ec-trust-text">
+
+            <strong>
+              Practical Skills
+            </strong>
+
+            <span>
+              Build knowledge you can apply
+            </span>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+
+    <!-- =======================================================
+         INTRO
+         ======================================================= -->
+
+    <section class="ec-intro">
+
+      <div class="ec-container">
+
+        <span class="ec-section-label">
+          Learning made meaningful
+        </span>
+
+        <h2>
+          Education that helps you move forward.
+        </h2>
+
+        <p>
+          Whether you're strengthening your foundations or developing
+          new technical skills, EduConnect gives you access to learning
+          designed to be clear, practical and engaging.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- =======================================================
+         COURSES
+         ======================================================= -->
+
+    <section
+      class="ec-courses-section"
+      id="courses"
+    >
+
+      <div class="ec-container">
+
+        <div class="ec-courses-heading">
+
+          <div>
+
+            <h2>
+              Explore our courses
+            </h2>
+
+            <p>
+              Find a course that matches your learning goals.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div
+          id="coursesContainer"
+          class="courses-grid"
+        >
+
+          <div class="loading-spinner">
+
+            <p>
+              Loading courses...
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =======================================================
+         WHY EDUCONNECT
+         ======================================================= -->
+
+    <section class="ec-value-section">
+
+      <div class="ec-container">
+
+        <div class="ec-value-header">
+
+          <span class="ec-section-label">
+            Why EduConnect
+          </span>
+
+          <h2>
+            More than a course. A better way to learn.
+          </h2>
+
+          <p>
+            We believe good education should be accessible,
+            structured and connected to real growth.
+          </p>
+
+        </div>
+
+
+        <div class="ec-value-grid">
+
+          <article class="ec-value-card">
+
+            <span class="ec-value-number">
+              01
+            </span>
+
+            <h3>
+              Learn at your level
+            </h3>
+
+            <p>
+              Explore courses designed to help you strengthen
+              your understanding and progress at a comfortable pace.
+            </p>
+
+          </article>
+
+
+          <article class="ec-value-card">
+
+            <span class="ec-value-number">
+              02
+            </span>
+
+            <h3>
+              Learn from people
+            </h3>
+
+            <p>
+              Connect with tutors who can guide you through difficult
+              concepts and help turn questions into understanding.
+            </p>
+
+          </article>
+
+
+          <article class="ec-value-card">
+
+            <span class="ec-value-number">
+              03
+            </span>
+
+            <h3>
+              Build for the future
+            </h3>
+
+            <p>
+              Develop mathematical and technical foundations that
+              can support your academic and professional journey.
+            </p>
+
+          </article>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =======================================================
+         FINAL CTA
+         ======================================================= -->
+
+    <section class="ec-final-cta">
+
+      <div class="ec-container">
+
+        <div class="ec-final-cta-box">
+
+          <h2>
+            Your next learning opportunity starts here.
+          </h2>
+
+          <p>
+            Explore our courses, connect with a tutor and take
+            the next step in your learning journey.
+          </p>
+
+          <a
+            href="signup.html"
+            class="ec-primary-btn"
+          >
+            Create Your Account
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- =========================================================
+       FOOTER
+       ========================================================= -->
+
+  <footer class="ec-footer">
+
+    <div class="ec-container">
+
+      <div class="ec-footer-main">
+
+        <div class="ec-footer-brand">
+
+          <div class="ec-footer-brand-name">
+            EduConnect
+          </div>
+
+          <p>
+            A learning platform connecting students with structured
+            courses and dedicated tutors in programming, mathematics
+            and beyond.
+          </p>
+
+        </div>
+
+
+        <div class="ec-footer-column">
+
+          <h4>
+            Platform
+          </h4>
+
+          <a href="#courses">
+            Courses
+          </a>
+
+          <a href="signup.html">
+            Get Started
+          </a>
+
+          <a href="login.html">
+            Login
+          </a>
+
+        </div>
+
+
+        <div class="ec-footer-column">
+
+          <h4>
+            Company
+          </h4>
+
+          <a href="about.html">
+            About Us
+          </a>
+
+          <a href="signup.html">
+            Join EduConnect
+          </a>
+
+        </div>
+
+      </div>
+
+
+      <div class="ec-footer-bottom">
+
+        © 2026 EduConnect. All rights reserved.
+
+      </div>
+
+    </div>
+
+  </footer>
+
+
+  <!-- =========================================================
+       EXISTING API
+       DO NOT CHANGE
+       ========================================================= -->
+
+  <script src="js/api.js?v=9"></script>
+
+
+  <script>
+
+    // ============================================================
+    // FORMAT CURRENCY
+    // ============================================================
+
+    function formatKES(amount) {
+
+      return new Intl.NumberFormat("en-KE", {
+
+        style: "currency",
+
+        currency: "KES",
+
+        maximumFractionDigits: 0
+
+      }).format(amount);
+
+    }
+
+
+    // ============================================================
+    // TRUNCATE TEXT
+    // ============================================================
+
+    function truncateText(text, maxLength = 100) {
+
+      if (!text) return "";
+
+      if (text.length <= maxLength) {
+        return text;
+      }
+
+      return text.substring(0, maxLength) + "...";
+    }
+
+
+    // ============================================================
+    // LOAD COURSES
+    // ============================================================
+
+    async function loadCourses() {
+
+      const container =
+        document.getElementById("coursesContainer");
+
+      try {
+
+        /*
+         * Existing API call retained exactly.
+         */
+
+        const result =
+          await Api.getCatalog({
+            limit: 20
+          });
+
+
+        if (!result || !result.ok) {
+
+          container.innerHTML = `
+            <div class="no-courses">
+
+              <p>
+                Unable to load courses.
+                Please try again later.
+              </p>
+
+            </div>
+          `;
+
+          return;
+        }
+
+
+        const courses =
+          result.data?.courses || [];
+
+
+        if (courses.length === 0) {
+
+          container.innerHTML = `
+
+            <div class="no-courses">
+
+              <p>
+                No courses available yet.
+                Check back soon!
+              </p>
+
+              <p
+                style="
+                  margin-top: 10px;
+                  font-size: 0.85rem;
+                "
+              >
+                Be the first to
+                <a href="signup.html">
+                  sign up
+                </a>
+                and start learning.
+              </p>
+
+            </div>
+
+          `;
+
+          return;
+        }
+
+
+        container.innerHTML = "";
+
+
+        // ========================================================
+        // DISPLAY COURSES
+        // ========================================================
+
+        courses.forEach(course => {
+
+          const card =
+            document.createElement("div");
+
+          card.className = "course-card";
+
+
+          const subjectName =
+            course.subject?.name || "General";
+
+
+          const description =
+            course.description ||
+            "No description available";
+
+
+          const imageUrl =
+            course.imageUrl || "";
+
+
+          const imageHtml = imageUrl
+
+            ? `
+              <img
+                src="${imageUrl}"
+                alt="${course.title}"
+                class="course-image"
+                loading="lazy"
+                onerror="this.style.display='none'"
+              >
+            `
+
+            : `
+
+              <div
+                class="course-image"
+                style="
+                  display:flex;
+                  align-items:center;
+                  justify-content:center;
+                  color:#627d98;
+                  background:#edf2f7;
+                "
+              >
+                <span>
+                  Course Image
+                </span>
+              </div>
+
+            `;
+
+
+          card.innerHTML = `
+
+            ${imageHtml}
+
+
+            <h3>
+              ${course.title}
+            </h3>
+
+
+            <div class="course-subject">
+              ${subjectName}
+            </div>
+
+
+            <div class="course-description">
+              ${truncateText(description, 100)}
+            </div>
+
+
+            <div class="course-price">
+              ${formatKES(course.price)}
+            </div>
+
+
+            <a
+              href="login.html"
+              class="btn-enroll"
+            >
+              Enroll Now
+            </a>
+
+
+            <div class="tutor-info">
+
+              <span>
+                Tutor:
+                ${course.tutor?.user?.email ||
+                "Expert Tutor"}
+              </span>
+
+            </div>
+
+          `;
+
+
+          container.appendChild(card);
+
+        });
+
+      }
+
+
+      catch (error) {
+
+        console.error(
+          "Error loading courses:",
+          error
+        );
+
+
+        container.innerHTML = `
+
+          <div class="no-courses">
+
+            <p>
+              An error occurred while loading courses.
+            </p>
+
+            <p
+              style="
+                margin-top:10px;
+                font-size:0.85rem;
+              "
+            >
+              Please refresh the page or try again later.
+            </p>
+
+          </div>
+
+        `;
+
+      }
+
+    }
+
+
+    // ============================================================
+    // START
+    // ============================================================
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      loadCourses
+    );
+
+  </script>
 
 </body>
-
 </html>

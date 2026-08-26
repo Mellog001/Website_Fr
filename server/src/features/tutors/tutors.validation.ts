@@ -8,6 +8,14 @@ export const updateProfileSchema = z.object({
   }),
 });
 
+export const createSubjectSchema = z.object({
+  body: z.object({
+    name: z.string().min(2, 'Subject name must be at least 2 characters').max(255),
+    code: z.string().min(2, 'Code must be at least 2 characters').max(50).toUpperCase().optional(),
+    description: z.string().max(500, 'Description too long').optional(),
+  }),
+});
+
 export const requestCompetencyTestSchema = z.object({
   body: z.object({
     subjectId: z.string().uuid('Invalid subject ID format'),

@@ -37,6 +37,10 @@ export class AuthService {
   public async register(payload: any): Promise<Pick<AuthResponse, 'user'>> {
     const { email, password, role } = payload;
 
+    if (role === UserRole.ADMIN) {
+  throw AppError.forbidden('Administrator accounts cannot be created through public registration.');
+}
+
     // Check if email already registered
     const [existingRows] = await pool.execute<RowDataPacket[]>(
       'SELECT id FROM users WHERE email = ?',

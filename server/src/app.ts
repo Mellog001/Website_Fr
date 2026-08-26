@@ -15,7 +15,7 @@ app.use(helmet());
 
 // Cross Origin Resource Sharing
 app.use(cors({
-  origin: '*', // Adjust this to specific domains in production
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
@@ -29,7 +29,15 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const morganStream = {
   write: (message: string) => logger.http(message.trim()),
 };
-app.use(morgan(':method :url :status :res[content-length] - :response-time ms', { stream: morganStream }));
+
+app.use(
+  morgan(
+    ':method :url :status :res[content-length] - :response-time ms',
+    {
+      stream: morganStream,
+    }
+  )
+);
 
 // Apply rate limiter globally
 app.use('/api', globalLimiter);
@@ -47,7 +55,12 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 // Serve local uploaded files
-app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
+app.use(
+  '/uploads',
+  express.static(
+    path.resolve(process.cwd(), 'uploads')
+  )
+);
 
 // Centralized Routing hooks
 app.use('/api/v1', rootRouter);
@@ -60,7 +73,7 @@ app.use((_req: Request, res: Response) => {
   });
 });
 
-// Central Error Interceptor Middleware
+// Centralized Error Interceptor Middleware
 app.use(errorMiddleware);
 
 export default app;

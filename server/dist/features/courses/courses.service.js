@@ -170,15 +170,15 @@ class CoursesService {
         const total = countRows[0].total;
         // Fetch courses with subject and tutor info
         const [courses] = await database_1.default.execute(`SELECT c.*, 
-              s.name AS subject_name, s.code AS subject_code,
-              tp.id AS tutor_profile_id, u.email AS tutor_email
-       FROM courses c
-       LEFT JOIN subjects s ON s.id = c.subject_id
-       LEFT JOIN tutor_profiles tp ON tp.id = c.tutor_id
-       LEFT JOIN users u ON u.id = tp.user_id
-       ${whereClause}
-       ORDER BY ${orderBy}
-       LIMIT ? OFFSET ?`, [...params, limit, offset]);
+          s.name AS subject_name, s.code AS subject_code, 
+          tp.id AS tutor_profile_id, u.email AS tutor_email 
+   FROM courses c 
+   LEFT JOIN subjects s ON s.id = c.subject_id 
+   LEFT JOIN tutor_profiles tp ON tp.id = c.tutor_id 
+   LEFT JOIN users u ON u.id = tp.user_id 
+   ${whereClause} 
+   ORDER BY ${orderBy} 
+   LIMIT ${Number(limit)} OFFSET ${Number(offset)}`, params);
         // Map to expected shape
         const mapped = courses.map((c) => ({
             ...c,

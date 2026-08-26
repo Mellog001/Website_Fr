@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Courses — EduConnect</title>
+  <link rel="stylesheet" href="CSS/style.css">
+  <style>
+    .image-preview {
+      max-width: 200px;
+      max-height: 200px;
+      margin-top: 10px;
+      border-radius: 8px;
+      display: none;
+    }
+    .image-preview.visible {
+      display: block;
+    }
+    .file-input-wrapper {
+      margin-top: 10px;
+    }
+    .input-group small {
+      display: block;
+      color: #666;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    .course-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .course-actions .btn {
+      flex: 1;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-publish {
+      background: #4caf50;
+      color: white;
+    }
+    .btn-publish:hover {
+      background: #388e3c;
+    }
+    .btn-unpublish {
+      background: #ff9800;
+      color: white;
+    }
+    .btn-unpublish:hover {
+      background: #f57c00;
+    }
+    .btn-manage {
+      background: #2196f3;
+      color: white;
+    }
+    .btn-manage:hover {
+      background: #1976d2;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .status-published {
+      background: #c8e6c9;
+      color: #2e7d32;
+    }
+    .status-draft {
+      background: #ffe0b2;
+      color: #e65100;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h2>Tutor Course Management</h2>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="tutor-courses.html">My Courses</a>
+      <a href="profile.html">Profile</a>
+      <a href="about.html">About Us</a>
+      <a href="#" id="logoutLink">Logout</a>
+    </nav>
+  </header>
+
+  <main class="dashboard">
+
+    <!-- PAGE INTRO -->
+    <section>
+      <h3>My Courses</h3>
+      <p>Create, manage and organize your courses.</p>
+    </section>
+
+    <!-- CREATE COURSE -->
+    <section id="createCourse" class="card">
+      <h3>Create New Course</h3>
+      <p>Create a course as a draft. You can add modules and learning materials afterwards.</p>
+
+      <div id="courseError" class="form-error" hidden></div>
+      <div id="courseSuccess" class="form-success" hidden></div>
+
+      <form id="createCourseForm" enctype="multipart/form-data">
+        <div class="input-group">
+          <label for="courseTitle">Course Title</label>
+          <input type="text" id="courseTitle" placeholder="e.g. Introduction to Python" required>
+          <small>Minimum 5 characters</small>
+        </div>
+
+        <div class="input-group">
+          <label for="courseDescription">Description</label>
+          <textarea id="courseDescription" rows="5" placeholder="Describe your course..." required></textarea>
+          <small>Minimum 10 characters</small>
+        </div>
+
+        <div class="input-group">
+          <label for="coursePrice">Price (KES)</label>
+          <input type="number" id="coursePrice" min="0" step="1" placeholder="500" required>
+        </div>
+
+        <div class="input-group">
+          <label for="subjectName">Subject/Category</label>
+          <input type="text" id="subjectName" placeholder="e.g. Mathematics, Programming, Business" required>
+          <small>Enter the subject or category for this course</small>
+        </div>
+
+        <div class="input-group">
+          <label for="courseImage">Course Image (Optional)</label>
+          <input type="file" id="courseImage" accept="image/*">
+          <small>Upload a cover image for your course (JPG, PNG, GIF)</small>
+          <img id="imagePreview" class="image-preview" alt="Course image preview">
+        </div>
+
+        <button type="submit" class="btn" id="createCourseBtn">Create Course</button>
+      </form>
+    </section>
+
+    <!-- MY COURSES -->
+    <section>
+      <h3>My Course List</h3>
+      <div id="myCourses" class="dashboard-cards">
+        <p>Loading your courses...</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="js/api.js?v=3"></script>
+
+  <script>
+    requireAuth();
+
+    // ================================
+    // ROLE PROTECTION
+    // ================================
+
+    const user = Auth.getUser();
+    const claims = Auth.decodeAccessToken();
+    const role = user?.role || claims?.role || "STUDENT";
+
+    if (role !== "TUTOR") {
+      if (role === "ADMIN") {
+        window.location.href = "admin-dashboard.html";
+      } else {
+        window.location.href = "courses.html";
+      }
+    }
+
+    // ================================
+    // ELEMENTS
+    // ================================
+
+    const form = document.getElementById("createCourseForm");
+    const titleInput = document.getElementById("courseTitle");
+    const descriptionInput = document.getElementById("courseDescription");
+    const priceInput = document.getElementById("coursePrice");
+    const subjectNameInput = document.getElementById("subjectName");
+    const imageInput = document.getElementById("courseImage");
+    const imagePreview = document.getElementById("imagePreview");
+    const createBtn = document.getElementById("createCourseBtn");
+    const errorBox = document.getElementById("courseError");
+    const successBox = document.getElementById("courseSuccess");
+    const myCourses = document.getElementById("myCourses");
+
+    // ================================
+    // IMAGE PREVIEW
+    // ================================
+
+    imageInput.addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          imagePreview.src = e.target.result;
+          imagePreview.classList.add("visible");
+        };
+        reader.readAsDataURL(file);
+      } else {
+        imagePreview.classList.remove("visible");
+        imagePreview.src = "";
+      }
+    });
+
+    // ================================
+    // HELPERS
+    // ================================
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.hidden = false;
+      successBox.hidden = true;
+    }
+
+    function showSuccess(message) {
+      successBox.textContent = message;
+      successBox.hidden = false;
+      errorBox.hidden = true;
+    }
+
+    function formatKES(amount) {
+      return new Intl.NumberFormat("en-KE", {
+        style: "currency",
+        currency: "KES",
+        maximumFractionDigits: 0
+      }).format(amount);
+    }
+
+    // ================================
+    // FIND OR CREATE SUBJECT
+    // ================================
+
+    async function findOrCreateSubject(name) {
+      try {
+        console.log("Looking for subject:", name);
+        
+        // First, try to find existing subject from catalog
+        const catalogResult = await Api.getCatalog({ limit: 100 });
+        console.log("Catalog result:", catalogResult);
+        
+        if (catalogResult && catalogResult.ok && catalogResult.data) {
+          const subjects = catalogResult.data.subjects || [];
+          console.log("Existing subjects:", subjects);
+          
+          // Look for exact match (case insensitive)
+          const existingSubject = subjects.find(
+            s => s.name && s.name.toLowerCase() === name.toLowerCase()
+          );
+          
+          if (existingSubject) {
+            console.log("Found existing subject:", existingSubject);
+            return {
+              ok: true,
+              data: existingSubject
+            };
+          }
+        }
+
+        // If no subject found, create a new one using the tutors endpoint
+        console.log("Creating new subject:", name);
+        
+        // Generate a code from the name
+        const code = name
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, '')
+          .substring(0, 8) + Math.floor(Math.random() * 1000);
+
+        const subjectData = {
+          name: name,
+          code: code,
+          description: `Course subject: ${name}`
+        };
+
+        console.log("Subject data to send:", subjectData);
+        console.log("Calling Api.createSubject with /tutors/subjects");
+
+        // Use the tutors/subjects endpoint
+        const result = await Api.createSubject(subjectData);
+        console.log("Subject creation result:", result);
+        
+        if (result && result.ok) {
+          return {
+            ok: true,
+            data: result.data
+          };
+        }
+        
+        return {
+          ok: false,
+          message: result?.message || "Failed to create new subject"
+        };
+
+      } catch (error) {
+        console.error("Error finding/creating subject:", error);
+        return {
+          ok: false,
+          message: error instanceof Error ? error.message : "Failed to find or create subject"
+        };
+      }
+    }
+
+    // ================================
+    // TOGGLE COURSE PUBLISH STATUS
+    // ================================
+
+    async function togglePublishCourse(courseId, publish) {
+      try {
+        const action = publish ? 'publish' : 'unpublish';
+        console.log(`${action}ing course:`, courseId);
+        
+        const result = await Api.updateCourse(courseId, { isPublished: publish });
+        console.log("Update result:", result);
+        
+        if (result && result.ok) {
+          showSuccess(`Course ${action}ed successfully!`);
+          await loadMyCourses(); // Refresh the list
+        } else {
+          showError(result?.message || `Failed to ${action} course.`);
+        }
+      } catch (error) {
+        console.error("Error toggling publish status:", error);
+        showError("An error occurred while updating course status.");
+      }
+    }
+
+    // ================================
+    // CREATE COURSE
+    // ================================
+
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+
+      errorBox.hidden = true;
+      successBox.hidden = true;
+
+      const title = titleInput.value.trim();
+      const description = descriptionInput.value.trim();
+      const price = Number(priceInput.value);
+      const subjectName = subjectNameInput.value.trim();
+      const imageFile = imageInput.files[0];
+
+      // Validation
+      if (!title) {
+        showError("Course title is required.");
+        return;
+      }
+
+      if (title.length < 5) {
+        showError("Course title must be at least 5 characters long.");
+        return;
+      }
+
+      if (!description) {
+        showError("Course description is required.");
+        return;
+      }
+
+      if (description.length < 10) {
+        showError("Course description must be at least 10 characters long.");
+        return;
+      }
+
+      if (Number.isNaN(price) || price < 0) {
+        showError("Enter a valid course price.");
+        return;
+      }
+
+      if (!subjectName) {
+        showError("Please enter the subject or category.");
+        return;
+      }
+
+      createBtn.disabled = true;
+      createBtn.textContent = "Creating Course...";
+
+      try {
+        // Step 1: Find or create subject
+        console.log("Step 1: Finding or creating subject...");
+        const subjectResult = await findOrCreateSubject(subjectName);
+        console.log("Subject result:", subjectResult);
+        
+        if (!subjectResult || !subjectResult.ok) {
+          showError(subjectResult?.message || "Failed to create/find subject.");
+          createBtn.disabled = false;
+          createBtn.textContent = "Create Course";
+          return;
+        }
+
+        const subjectId = subjectResult.data?.id;
+        console.log("Subject ID:", subjectId);
+        
+        if (!subjectId) {
+          showError("Failed to get subject ID.");
+          createBtn.disabled = false;
+          createBtn.textContent = "Create Course";
+          return;
+        }
+
+        // Step 2: Upload image if provided
+        // Step 2: Upload image if provided
+let imageUrl = null;
+if (imageFile) {
+  try {
+    console.log("Uploading image:", imageFile.name);
+    const formData = new FormData();
+    formData.append("file", imageFile);
+    formData.append("type", "course");
+
+    const uploadResult = await Api.uploadFile(formData);
+    console.log("Image upload result:", uploadResult);
+    
+    if (uploadResult && uploadResult.ok) {
+      imageUrl = uploadResult.data?.url;
+      console.log("Image uploaded successfully:", imageUrl);
+    } else {
+      console.warn("Image upload failed, continuing without image");
+      console.warn("Upload result:", uploadResult);
+    }
+  } catch (uploadError) {
+    console.error("Image upload error:", uploadError);
+    // Continue without image
+  }
+}
+
+        // Step 3: Create course with image
+        const coursePayload = {
+          title: title,
+          description: description,
+          price: price,
+          subjectId: subjectId,
+          imageUrl: imageUrl // Add image URL if uploaded
+        };
+
+        console.log("Course payload:", coursePayload);
+
+        const result = await Api.createCourse(coursePayload);
+        console.log("Course creation response:", result);
+
+        if (!result || !result.ok) {
+          let errorMessage = "Failed to create course.";
+          if (result?.message) {
+            errorMessage = result.message;
+          }
+          if (result?.errors) {
+            if (Array.isArray(result.errors)) {
+              errorMessage = result.errors.join(", ");
+            } else if (typeof result.errors === 'object') {
+              const errorList = [];
+              for (const key in result.errors) {
+                if (result.errors[key]) {
+                  if (Array.isArray(result.errors[key])) {
+                    errorList.push(result.errors[key].join(", "));
+                  } else {
+                    errorList.push(result.errors[key]);
+                  }
+                }
+              }
+              errorMessage = errorList.join(", ") || errorMessage;
+            }
+          }
+          showError(errorMessage);
+          createBtn.disabled = false;
+          createBtn.textContent = "Create Course";
+          return;
+        }
+
+        showSuccess("Course created successfully as a draft.");
+
+        // Reset form
+        form.reset();
+        imagePreview.classList.remove("visible");
+        imagePreview.src = "";
+
+        // Refresh course list
+        await loadMyCourses();
+
+      } catch (error) {
+        console.error("Create course error:", error);
+        let errorMessage = "An unexpected error occurred while creating the course.";
+        if (error instanceof Error) {
+          errorMessage = error.message || errorMessage;
+        }
+        showError(errorMessage);
+      } finally {
+        createBtn.disabled = false;
+        createBtn.textContent = "Create Course";
+      }
+    });
+
+    // ================================
+    // LOAD TUTOR COURSES
+    // ================================
+
+    async function loadMyCourses() {
+      try {
+        myCourses.innerHTML = `<p>Loading your courses...</p>`;
+
+        const result = await Api.getCatalog({ limit: 100 });
+
+        if (!result || !result.ok) {
+          myCourses.innerHTML = `
+            <p class="form-error">
+              ${result?.message || "Unable to load your courses."}
+            </p>
+          `;
+          return;
+        }
+
+        const courses = result.data?.courses || [];
+
+        if (courses.length === 0) {
+          myCourses.innerHTML = `
+            <div class="card">
+              <h4>No courses yet</h4>
+              <p>You haven't created any courses. Use the form above to create your first course.</p>
+            </div>
+          `;
+          return;
+        }
+
+        myCourses.innerHTML = "";
+
+        courses.forEach(course => {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const subjectName = course.subject?.name || "General";
+          const isPublished = course.isPublished || false;
+          const statusText = isPublished ? "Published" : "Draft";
+          const statusClass = isPublished ? "status-published" : "status-draft";
+          
+          const imageHtml = course.imageUrl ? 
+            `<img src="${course.imageUrl}" alt="${course.title}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; margin-bottom: 10px;">` : 
+            "";
+
+          card.innerHTML = `
+            ${imageHtml}
+            <h4>${course.title}</h4>
+            <p><strong>Subject:</strong> ${subjectName}</p>
+            <p>${course.description ? course.description.substring(0, 100) + (course.description.length > 100 ? '...' : '') : "No description"}</p>
+            <p><strong>Price:</strong> ${formatKES(course.price)}</p>
+            <p><strong>Status:</strong> <span class="status-badge ${statusClass}">${statusText}</span></p>
+            <div class="course-actions">
+              <a href="course-details.html?id=${course.id}" class="btn btn-manage">Manage Course</a>
+              <button onclick="togglePublishCourse('${course.id}', ${!isPublished})" class="btn ${isPublished ? 'btn-unpublish' : 'btn-publish'}">
+                ${isPublished ? 'Unpublish' : 'Publish'}
+              </button>
+            </div>
+          `;
+
+          myCourses.appendChild(card);
+        });
+
+      } catch (error) {
+        console.error("Error loading courses:", error);
+        myCourses.innerHTML = `
+          <p class="form-error">
+            An error occurred while loading your courses.
+          </p>
+        `;
+      }
+    }
+
+    // ================================
+    // LOGOUT
+    // ================================
+
+    document.getElementById("logoutLink").addEventListener("click", async event => {
+      event.preventDefault();
+      await Api.logout();
+      window.location.href = "login.html";
+    });
+
+    // ================================
+    // START
+    // ================================
+
+    async function init() {
+      await loadMyCourses();
+    }
+
+    init();
+  </script>
+
+</body>
+</html>

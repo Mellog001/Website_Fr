@@ -1,7 +1,13 @@
-// EduConnect API client
-// Talks to the real backend at server/src (routes mounted under /api/v1).
-// Change API_BASE_URL to your deployed backend URL when you go live.
+// ============================================================
+// EduConnect API Client
+// Backend: http://localhost:5000/api/v1
+// ============================================================
+
 const API_BASE_URL = "http://localhost:5000/api/v1";
+
+// ============================================================
+// STORAGE KEYS
+// ============================================================
 
 const TOKEN_KEYS = {
   access: "educonnect_access_token",
@@ -9,135 +15,414 @@ const TOKEN_KEYS = {
   user: "educonnect_user",
 };
 
+// ============================================================
+// AUTH
+// ============================================================
+
 const Auth = {
-  getAccessToken() {
+  getAccessToken: function() {
     return localStorage.getItem(TOKEN_KEYS.access);
   },
-  getRefreshToken() {
+  getRefreshToken: function() {
     return localStorage.getItem(TOKEN_KEYS.refresh);
   },
-  getUser() {
+  getUser: function() {
     const raw = localStorage.getItem(TOKEN_KEYS.user);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch (error) {
+      console.error("Could not parse stored user:", error);
+      return null;
+    }
   },
-  isLoggedIn() {
+  isLoggedIn: function() {
     return !!this.getAccessToken();
   },
-  setSession({ accessToken, refreshToken, user }) {
-    localStorage.setItem(TOKEN_KEYS.access, accessToken);
-    localStorage.setItem(TOKEN_KEYS.refresh, refreshToken);
-    localStorage.setItem(TOKEN_KEYS.user, JSON.stringify(user));
+  setSession: function({ accessToken, refreshToken, user }) {
+    if (accessToken) {
+      localStorage.setItem(TOKEN_KEYS.access, accessToken);
+    }
+    if (refreshToken) {
+      localStorage.setItem(TOKEN_KEYS.refresh, refreshToken);
+    }
+    if (user) {
+      localStorage.setItem(TOKEN_KEYS.user, JSON.stringify(user));
+    }
   },
-  clearSession() {
+  clearSession: function() {
     localStorage.removeItem(TOKEN_KEYS.access);
     localStorage.removeItem(TOKEN_KEYS.refresh);
     localStorage.removeItem(TOKEN_KEYS.user);
   },
-  // The access token is a JWT — decode its payload client-side for quick
-  // display (name/role) without a dedicated "/me" endpoint (the backend
-  // doesn't expose one yet).
-  decodeAccessToken() {
+  decodeAccessToken: function() {
     const token = this.getAccessToken();
     if (!token) return null;
     try {
-      const payload = token.split(".")[1];
-      return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
-    } catch {
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+      let payload = parts[1];
+      payload = payload.replace(/-/g, "+").replace(/_/g, "/");
+      while (payload.length % 4 !== 0) {
+        payload += "=";
+      }
+      return JSON.parse(atob(payload));
+    } catch (error) {
+      console.error("Could not decode access token:", error);
       return null;
     }
-  },
+  }
 };
 
-// Redirects to login if there's no session. Call at the top of any protected page.
+// ============================================================
+// AUTH PROTECTION
+// ============================================================
+
 function requireAuth() {
   if (!Auth.isLoggedIn()) {
     window.location.href = "login.html";
   }
 }
 
+// ============================================================
+// TOKEN REFRESH
+// ============================================================
+
 let refreshInFlight = null;
 
 async function refreshAccessToken() {
   const refreshToken = Auth.getRefreshToken();
-  if (!refreshToken) throw new Error("No refresh token available.");
-
-  const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+  if (!refreshToken) {
+    throw new Error("No refresh token available.");
+  }
+  const response = await fetch(API_BASE_URL + "/auth/refresh", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
+    body: JSON.stringify({ refreshToken: refreshToken })
   });
-  const body = await res.json();
-
-  if (!res.ok) {
+  const body = await response.json().catch(function() { return {}; });
+  if (!response.ok) {
     Auth.clearSession();
     throw new Error(body.message || "Session expired.");
   }
-
-  const user = Auth.getUser();
+  const accessToken = body.data && body.data.accessToken;
+  const newRefreshToken = (body.data && body.data.refreshToken) || refreshToken;
+  if (!accessToken) {
+    throw new Error("Refresh response did not contain an access token.");
+  }
   Auth.setSession({
-    accessToken: body.data.accessToken,
-    refreshToken: body.data.refreshToken,
-    user,
+    accessToken: accessToken,
+    refreshToken: newRefreshToken,
+    user: Auth.getUser()
   });
-  return body.data.accessToken;
+  return accessToken;
 }
 
-// Wraps fetch: attaches the access token, retries once on 401 via refresh,
-// and always returns parsed JSON with response.ok / response.status attached.
-async function apiFetch(path, options = {}) {
-  const doFetch = (token) =>
-    fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...options.headers,
-      },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
+// ============================================================
+// GENERIC API REQUEST
+// ============================================================
 
-  let res = await doFetch(Auth.getAccessToken());
-
-  if (res.status === 401 && Auth.getRefreshToken()) {
+async function apiFetch(path, options) {
+  if (options === undefined) {
+    options = {};
+  }
+  async function makeRequest(token) {
+    var headers = { "Content-Type": "application/json" };
+    if (token) {
+      headers.Authorization = "Bearer " + token;
+    }
+    if (options.headers) {
+      for (var key in options.headers) {
+        if (options.headers.hasOwnProperty(key)) {
+          headers[key] = options.headers[key];
+        }
+      }
+    }
+    var requestOptions = {
+      method: options.method || "GET",
+      headers: headers
+    };
+    if (options.body !== undefined && options.body !== null) {
+      if (typeof options.body === "string") {
+        requestOptions.body = options.body;
+      } else {
+        requestOptions.body = JSON.stringify(options.body);
+      }
+    }
+    return fetch(API_BASE_URL + path, requestOptions);
+  }
+  var response;
+  try {
+    response = await makeRequest(Auth.getAccessToken());
+  } catch (error) {
+    console.error("API connection error:", error);
+    return {
+      ok: false,
+      status: 0,
+      message: "Unable to connect to the server.",
+      error: error
+    };
+  }
+  if (response.status === 401 && Auth.getRefreshToken()) {
     try {
-      refreshInFlight = refreshInFlight || refreshAccessToken();
-      const newToken = await refreshInFlight;
+      if (!refreshInFlight) {
+        refreshInFlight = refreshAccessToken();
+      }
+      var newToken = await refreshInFlight;
       refreshInFlight = null;
-      res = await doFetch(newToken);
-    } catch {
+      response = await makeRequest(newToken);
+    } catch (error) {
       refreshInFlight = null;
       Auth.clearSession();
       window.location.href = "login.html";
-      return null;
+      return {
+        ok: false,
+        status: 401,
+        message: "Your session has expired.",
+        error: error
+      };
     }
   }
-
-  const data = await res.json().catch(() => ({}));
-  return { ok: res.ok, status: res.status, ...data };
+  var data = await response.json().catch(function() { return {}; });
+  var result = {
+    ok: response.ok,
+    status: response.status
+  };
+  for (var key in data) {
+    if (data.hasOwnProperty(key)) {
+      result[key] = data[key];
+    }
+  }
+  return result;
 }
 
-const Api = {
-  register: (email, password, role) =>
-    apiFetch("/auth/register", { method: "POST", body: { email, password, role } }),
+// ============================================================
+// API
+// ============================================================
 
-  login: (email, password) =>
-    apiFetch("/auth/login", { method: "POST", body: { email, password } }),
-
-  logout: async () => {
-    const refreshToken = Auth.getRefreshToken();
+var Api = {
+  // ==========================================================
+  // AUTH
+  // ==========================================================
+  register: function(email, password, role) {
+    return apiFetch("/auth/register", {
+      method: "POST",
+      body: { email: email, password: password, role: role }
+    });
+  },
+  login: function(email, password) {
+    return apiFetch("/auth/login", {
+      method: "POST",
+      body: { email: email, password: password }
+    });
+  },
+  logout: async function() {
+    var refreshToken = Auth.getRefreshToken();
     if (refreshToken) {
-      await apiFetch("/auth/logout", { method: "POST", body: { refreshToken } });
+      try {
+        await apiFetch("/auth/logout", {
+          method: "POST",
+          body: { refreshToken: refreshToken }
+        });
+      } catch (error) {
+        console.warn("Logout request failed:", error);
+      }
     }
     Auth.clearSession();
   },
 
-  getCatalog: (params = {}) => {
-    const qs = new URLSearchParams(params).toString();
-    return apiFetch(`/courses/catalog${qs ? `?${qs}` : ""}`);
+  // ==========================================================
+  // COURSES
+  // ==========================================================
+  getCatalog: function(params) {
+    if (params === undefined) { params = {}; }
+    var query = new URLSearchParams(params).toString();
+    var url = "/courses/catalog";
+    if (query) {
+      url = url + "?" + query;
+    }
+    return apiFetch(url);
+  },
+  createCourse: function(courseData) {
+    return apiFetch("/courses", {
+      method: "POST",
+      body: courseData
+    });
+  },
+  updateCourse: function(courseId, courseData) {
+    return apiFetch("/courses/" + courseId, {
+      method: "PUT",
+      body: courseData
+    });
+  },
+  getCourseDetails: function(courseId) {
+    return apiFetch("/courses/" + courseId);
   },
 
-  getCourseDetails: (courseId) => apiFetch(`/courses/${courseId}`),
+  // ==========================================================
+  // ENROLLMENTS
+  // ==========================================================
+  enrollInCourse: function(courseId) {
+    return apiFetch("/courses/" + courseId + "/enroll", {
+      method: "POST"
+    });
+  },
+  getEnrollmentStatus: function(courseId) {
+    return apiFetch("/courses/" + courseId + "/enrollment-status");
+  },
 
-  initiateStkPush: (courseId, phoneNumber) =>
-    apiFetch("/payments/stk-push", { method: "POST", body: { courseId, phoneNumber } }),
+  // ==========================================================
+  // TUTORS
+  // ==========================================================
+  getTutorProfile: function() {
+    return apiFetch("/tutors/profile");
+  },
+  updateTutorProfile: function(data) {
+    return apiFetch("/tutors/profile", {
+      method: "PUT",
+      body: data
+    });
+  },
+  createSubject: function(subjectData) {
+    return apiFetch("/tutors/subjects", {
+      method: "POST",
+      body: subjectData
+    });
+  },
+  getTutorSubjects: function() {
+    return apiFetch("/tutors/subjects");
+  },
+  requestCompetencyTest: function(data) {
+    return apiFetch("/tutors/competency-tests", {
+      method: "POST",
+      body: data
+    });
+  },
+  listCompetencyTests: function() {
+    return apiFetch("/tutors/competency-tests");
+  },
+
+  // ==========================================================
+  // PAYMENTS
+  // ==========================================================
+  initiateStkPush: function(courseId, phoneNumber) {
+    return apiFetch("/payments/stk-push", {
+      method: "POST",
+      body: { courseId: courseId, phoneNumber: phoneNumber }
+    });
+  },
+
+  // ==========================================================
+  // ADMIN - TUTORS
+  // ==========================================================
+  getPendingTutors: function() {
+    return apiFetch("/admin/tutors/pending");
+  },
+  verifyTutor: function(userId) {
+    return apiFetch("/admin/tutors/" + userId + "/verify", {
+      method: "POST"
+    });
+  },
+  getAdminUsers: function(params) {
+    if (params === undefined) { params = {}; }
+    var query = new URLSearchParams(params).toString();
+    var url = "/admin/users";
+    if (query) {
+      url = url + "?" + query;
+    }
+    return apiFetch(url);
+  },
+
+
+// ==========================================================
+// ADMIN - ENROLLMENTS
+// ==========================================================
+getPendingEnrollments: function() {
+  return apiFetch("/admin/enrollments/pending");
+},
+activateEnrollment: function(enrollmentId) {
+  return apiFetch("/admin/enrollments/" + enrollmentId + "/activate", {
+    method: "POST"
+  });
+},
+  },
+
+  // ==========================================================
+  // STORAGE
+  // ==========================================================
+  uploadFile: async function(formData) {
+    try {
+      var file = formData.get('file');
+      var type = formData.get('type') || 'courses';
+      if (!file) {
+        return { ok: false, message: "No file provided" };
+      }
+      console.log("Uploading file:", { name: file.name, type: file.type, size: file.size });
+      var metadata = {
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        type: type,
+        mimeType: file.type
+      };
+      console.log("Step 1: Getting upload URL...");
+      var uploadUrlResponse = await apiFetch("/storage/upload", {
+        method: "POST",
+        body: metadata
+      });
+      console.log("Upload URL response:", uploadUrlResponse);
+      if (!uploadUrlResponse || !uploadUrlResponse.ok) {
+        return {
+          ok: false,
+          message: uploadUrlResponse?.message || "Failed to get upload URL"
+        };
+      }
+      var fileKey = uploadUrlResponse.data && uploadUrlResponse.data.fileKey;
+      var uploadUrl = uploadUrlResponse.data && uploadUrlResponse.data.uploadUrl;
+      var fileUrl = uploadUrlResponse.data && uploadUrlResponse.data.fileUrl;
+      if (!fileKey || !uploadUrl) {
+        return {
+          ok: false,
+          message: "Missing file key or upload URL"
+        };
+      }
+      console.log("Step 2: Uploading file to:", uploadUrl);
+      var uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: {
+          'Content-Type': file.type
+        }
+      });
+      console.log("Upload response status:", uploadResponse.status);
+      if (!uploadResponse.ok) {
+        var errorText = await uploadResponse.text();
+        console.error("Upload error:", errorText);
+        return {
+          ok: false,
+          message: "Upload failed with status: " + uploadResponse.status
+        };
+      }
+      console.log("File uploaded successfully!");
+      return {
+        ok: true,
+        data: {
+          url: fileUrl || "http://localhost:5000/uploads/" + fileKey,
+          fileKey: fileKey
+        }
+      };
+    } catch (error) {
+      console.error("Upload error:", error);
+      return {
+        ok: false,
+        message: error instanceof Error ? error.message : "Upload failed"
+      };
+    }
+  }
 };
+
+// ============================================================
+// DEBUG CONFIRMATION
+// ============================================================
+
+console.log("EduConnect API loaded successfully.");

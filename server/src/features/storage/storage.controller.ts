@@ -1,8 +1,10 @@
 import path from 'path';
+import fs from 'fs';
 import { Request, Response, NextFunction } from 'express';
 import { StorageService } from './storage.service';
 import pool from '../../config/database';
 import { AppError } from '../../common/errors/app-error';
+import { logger } from '../../config/logger';
 import { RowDataPacket } from 'mysql2';
 
 const storageService = new StorageService();
@@ -13,18 +15,41 @@ export class StorageController {
    */
   public getUploadUrl = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { filename, contentType, folder } = req.body;
-      const result = await storageService.getPresignedUploadUrl(
-        req.user!.id,
-        filename,
-        contentType,
-        folder
-      );
-
+      const { fileName, fileType, fileSize, type, mimeType } = req.body;
+      
+      // Validate required fields
+      if (!fileName) {
+        throw AppError.badRequest('File name is required');
+      }
+      
+      // Determine folder based on type
+      const folder = req.body.folder || req.body.type || 'courses';
+      
+      // Generate a unique file key
+      const timestamp = Date.now();
+      const random = Math.round(Math.random() * 1E9);
+      const extension = path.extname(fileName);
+      const baseName = path.basename(fileName, extension);
+      const fileKey = `${folder}/${baseName}-${timestamp}-${random}${extension}`;
+      
+      // Construct the upload URL (this is the endpoint that will receive the file)
+      const uploadUrl = `${req.protocol}://${req.get('host')}/api/v1/storage/upload/${fileKey}`;
+      
+      // Construct the final file URL (where the file will be accessible)
+      const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${fileKey}`;
+      
+      logger.info(`📁 Generated upload URL for: ${fileKey}`);
+      
       res.status(200).json({
         status: 'success',
         message: 'Upload info generated. Use PUT to /api/v1/storage/upload/:fileKey with the file binary.',
-        data: result,
+        data: {
+          fileKey: fileKey,
+          uploadUrl: uploadUrl,
+          fileUrl: fileUrl,
+          folder: folder,
+          fileName: fileName
+        },
       });
     } catch (error) {
       next(error);
@@ -40,17 +65,98 @@ export class StorageController {
         throw AppError.badRequest('No file provided in request.');
       }
 
+      // Get the file key from the URL path
       const fileKey = req.params[0]; // Captures the full path after /upload/
+      
+      if (!fileKey) {
+        throw AppError.badRequest('File key is required');
+      }
+
+      // Save the file using the storage service
       const fileUrl = await storageService.saveFile(fileKey, req.file.buffer);
+
+      logger.info(`📁 File uploaded successfully: ${fileKey} (${req.file.size} bytes)`);
 
       res.status(200).json({
         status: 'success',
         message: 'File uploaded successfully.',
         data: {
-          fileUrl,
-          fileKey,
+          fileUrl: fileUrl,
+          fileKey: fileKey,
           size: req.file.size,
+          mimetype: req.file.mimetype,
         },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get a file by its key (public access)
+   */
+  public getFile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { fileKey } = req.params;
+      
+      if (!fileKey) {
+        throw AppError.badRequest('File key is required');
+      }
+
+      // Construct the file path
+      const filePath = path.resolve(process.cwd(), 'uploads', fileKey);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        throw AppError.notFound('File not found');
+      }
+
+      // Determine content type based on file extension
+      const ext = path.extname(fileKey).toLowerCase();
+      let contentType = 'application/octet-stream';
+      
+      if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+      else if (ext === '.png') contentType = 'image/png';
+      else if (ext === '.gif') contentType = 'image/gif';
+      else if (ext === '.webp') contentType = 'image/webp';
+      else if (ext === '.pdf') contentType = 'application/pdf';
+      else if (ext === '.mp4') contentType = 'video/mp4';
+      
+      res.setHeader('Content-Type', contentType);
+      res.sendFile(filePath);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Delete a file (authenticated users only)
+   */
+  public deleteFile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { fileKey } = req.params;
+      
+      if (!fileKey) {
+        throw AppError.badRequest('File key is required');
+      }
+
+      // Construct the file path
+      const filePath = path.resolve(process.cwd(), 'uploads', fileKey);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        throw AppError.notFound('File not found');
+      }
+
+      // Delete the file
+      fs.unlinkSync(filePath);
+      
+      logger.info(`🗑️ File deleted: ${fileKey}`);
+      
+      res.status(200).json({
+        status: 'success',
+        message: 'File deleted successfully',
+        data: { fileKey }
       });
     } catch (error) {
       next(error);
@@ -77,6 +183,12 @@ export class StorageController {
 
       // Resolve full file path and send as download
       const filePath = path.resolve(process.cwd(), 'uploads', material.file_key);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        throw AppError.notFound('File not found on server.');
+      }
+      
       res.download(filePath, material.title, (err) => {
         if (err) {
           next(AppError.notFound('File not found on server.'));

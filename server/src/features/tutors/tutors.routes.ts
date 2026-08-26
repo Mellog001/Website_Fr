@@ -6,7 +6,8 @@ import {
   updateProfileSchema,
   requestCompetencyTestSchema,
   gradeCompetencyTestSchema,
-  verifyTutorSchema
+  verifyTutorSchema,
+  createSubjectSchema
 } from './tutors.validation';
 import { UserRole } from '../../types/enums';
 
@@ -20,6 +21,10 @@ router.get('/public/:profileId', controller.getPublicTutorById);
 // Tutor-only profile endpoints
 router.get('/profile', authenticate, authorize(UserRole.TUTOR), controller.getProfile);
 router.put('/profile', authenticate, authorize(UserRole.TUTOR), validate(updateProfileSchema), controller.updateProfile);
+
+// Subject management for verified tutors
+router.post('/subjects', authenticate, authorize(UserRole.TUTOR), validate(createSubjectSchema), controller.createSubject);
+router.get('/subjects', authenticate, authorize(UserRole.TUTOR), controller.getSubjects);
 
 // Competency tests endpoints (Tutors request and review, Admins see all)
 router.post('/competency-tests', authenticate, authorize(UserRole.TUTOR), validate(requestCompetencyTestSchema), controller.requestCompetencyTest);

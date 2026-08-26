@@ -118,6 +118,76 @@ export class CoursesController {
       next(error);
     }
   };
+
+  /**
+ * Enroll a student in a course (sends email with payment instructions)
+ */
+public enrollInCourse = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { courseId } = req.params;
+    const result = await coursesService.enrollInCourse(req.user!.id, courseId);
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'Enrollment request submitted. Check your email for payment instructions.',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get enrollment status for a course
+ */
+public getEnrollmentStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { courseId } = req.params;
+    const result = await coursesService.getEnrollmentStatus(req.user!.id, courseId);
+    
+    res.status(200).json({
+      status: 'success',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+/**
+ * Activate enrollment (Admin only)
+ */
+public activateEnrollment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { enrollmentId } = req.params;
+    const result = await coursesService.activateEnrollment(req.user!.id, enrollmentId);
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'Enrollment activated successfully',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get pending enrollments (Admin only)
+ */
+public getPendingEnrollments = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const result = await coursesService.getPendingEnrollments(req.user!.id);
+    
+    res.status(200).json({
+      status: 'success',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 }
 
 export default CoursesController;

@@ -55,7 +55,7 @@ async function processDueJobs() {
        WHERE status = 'PENDING' AND run_at <= NOW()
        ORDER BY run_at ASC
        LIMIT ?
-       FOR UPDATE SKIP LOCKED`, [BATCH_SIZE]);
+       FOR UPDATE`, [BATCH_SIZE]);
         if (jobs.length === 0) {
             await connection.rollback();
             connection.release();

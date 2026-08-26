@@ -61,6 +61,46 @@ export class TutorsController {
     }
   };
 
+  // NEW: Create subject (verified tutors only)
+  public createSubject = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Check if tutor is verified
+      const profile = await tutorsService.getProfile(req.user!.id);
+      
+      if (!profile.is_verified) {
+        res.status(403).json({
+          status: 'error',
+          message: 'Only verified tutors can create subjects',
+        });
+        return;
+      }
+
+      const result = await tutorsService.createSubject(req.body);
+      
+      res.status(201).json({
+        status: 'success',
+        message: 'Subject created successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // NEW: Get all subjects (for tutors)
+  public getSubjects = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const result = await tutorsService.getSubjects();
+      
+      res.status(200).json({
+        status: 'success',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public requestCompetencyTest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { subjectId, submissionFileUrl, submissionFileKey } = req.body;

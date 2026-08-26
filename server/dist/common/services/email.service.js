@@ -13,10 +13,13 @@ class EmailService {
         this.transporter = nodemailer_1.default.createTransport({
             host: env_1.env.SMTP_HOST,
             port: env_1.env.SMTP_PORT,
-            secure: env_1.env.SMTP_PORT === 465, // true for port 465, false for other ports
+            secure: env_1.env.SMTP_PORT === 465,
             auth: {
                 user: env_1.env.SMTP_USER,
                 pass: env_1.env.SMTP_PASS,
+            },
+            tls: {
+                rejectUnauthorized: false,
             },
         });
         // Verify SMTP connection config on start
@@ -89,7 +92,7 @@ class EmailService {
         // In a real application, you'd use a frontend URL from env config.
         // Assuming frontend is running locally or has an env var for base URL.
         // For now we just use the token in a generic URL for demonstration.
-        const verifyUrl = `${env_1.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
+        const verifyUrl = `${env_1.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email.html?token=${token}`;
         const text = `Hello,\n\nWelcome to EduConnect Academy! Please verify your email address by clicking the link below:\n\n${verifyUrl}\n\nThis link will expire in 24 hours.\n\nEduConnect Team`;
         const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">

@@ -22,6 +22,9 @@ class AuthService {
      */
     async register(payload) {
         const { email, password, role } = payload;
+        if (role === enums_1.UserRole.ADMIN) {
+            throw app_error_1.AppError.forbidden('Administrator accounts cannot be created through public registration.');
+        }
         // Check if email already registered
         const [existingRows] = await database_1.default.execute('SELECT id FROM users WHERE email = ?', [email]);
         if (existingRows.length > 0) {
@@ -67,7 +70,7 @@ class AuthService {
         if (!user || !(await (0, hash_1.comparePassword)(password, user.password_hash))) {
             throw app_error_1.AppError.unauthorized('Invalid email or password credentials.');
         }
-        if (!user.is_email_verified) {
+        if (!user.is_email_verified && user.role !== enums_1.UserRole.ADMIN) {
             throw app_error_1.AppError.unauthorized('Please verify your email before logging in.');
         }
         logger_1.logger.info(`🔑 User logged in: ${user.email}`);
@@ -189,7 +192,7 @@ class AuthService {
         if (!user) {
             throw app_error_1.AppError.unauthorized('User session invalid or deleted.');
         }
-        if (!user.is_email_verified) {
+        if (!user.is_email_verified && user.role !== enums_1.UserRole.ADMIN) {
             throw app_error_1.AppError.unauthorized('Please verify your email to continue.');
         }
         // Generate new token family

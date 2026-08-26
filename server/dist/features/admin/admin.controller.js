@@ -4,6 +4,57 @@ exports.AdminController = void 0;
 const admin_service_1 = require("./admin.service");
 const adminService = new admin_service_1.AdminService();
 class AdminController {
+    /**
+     * List all users
+     */
+    listUsers = async (req, res, next) => {
+        try {
+            const { role, page, limit } = req.query;
+            const result = await adminService.listUsers(role, page ? Number(page) : undefined, limit ? Number(limit) : undefined);
+            res.status(200).json({
+                status: 'success',
+                data: result,
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    };
+    /**
+     * List tutors awaiting approval
+     */
+    listPendingTutors = async (_req, res, next) => {
+        try {
+            const result = await adminService.listPendingTutors();
+            res.status(200).json({
+                status: 'success',
+                data: result,
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    };
+    /**
+     * Approve a tutor
+     */
+    verifyTutor = async (req, res, next) => {
+        try {
+            const { userId } = req.params;
+            const result = await adminService.verifyTutor(req.user.id, userId);
+            res.status(200).json({
+                status: 'success',
+                message: 'Tutor verified successfully.',
+                data: result,
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    };
+    /**
+     * Suspend / activate a user
+     */
     suspendUser = async (req, res, next) => {
         try {
             const { userId } = req.params;
@@ -12,19 +63,6 @@ class AdminController {
             res.status(200).json({
                 status: 'success',
                 message: `User login suspension set to ${isSuspended} successfully`,
-                data: result,
-            });
-        }
-        catch (error) {
-            next(error);
-        }
-    };
-    listUsers = async (req, res, next) => {
-        try {
-            const { role, page, limit } = req.query;
-            const result = await adminService.listUsers(role, page ? Number(page) : undefined, limit ? Number(limit) : undefined);
-            res.status(200).json({
-                status: 'success',
                 data: result,
             });
         }

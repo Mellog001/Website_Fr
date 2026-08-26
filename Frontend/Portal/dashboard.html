@@ -1,92 +1,404 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard — EduConnect</title>
-<link rel="stylesheet" href="CSS/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Dashboard — EduConnect</title>
+
+  <link rel="stylesheet" href="CSS/style.css">
 </head>
+
 <body>
 
 <header>
+
   <h2 id="dashboardTitle">Dashboard</h2>
+
   <nav>
-    <a href="courses.html">Courses</a>
-    <a href="profile.html">Profile</a>
-    <a href="about.html">About Us</a>
-    <a href="#" id="logoutLink">Logout</a>
+
+    <a href="dashboard.html">
+      Dashboard
+    </a>
+
+    <!-- Role-specific Courses link -->
+    <a href="courses.html" id="coursesLink">
+      Courses
+    </a>
+
+    <a href="profile.html">
+      Profile
+    </a>
+
+    <a href="about.html">
+      About Us
+    </a>
+
+    <!-- Admin only -->
+    <a
+      href="admin-dashboard.html"
+      id="adminLink"
+      style="display:none;"
+    >
+      Admin
+    </a>
+
+    <a href="#" id="logoutLink">
+      Logout
+    </a>
+
   </nav>
+
 </header>
 
-<section class="dashboard">
-  <h3 id="welcomeMsg">Welcome</h3>
-  <p id="welcomeSub">Select a course to start learning.</p>
 
-  <div class="dashboard-cards" id="courseCards">
-    <p>Loading your courses...</p>
+<section class="dashboard">
+
+  <h3 id="welcomeMsg">
+    Welcome
+  </h3>
+
+  <p id="welcomeSub">
+    Loading dashboard...
+  </p>
+
+  <div
+    class="dashboard-cards"
+    id="courseCards"
+  >
+    <p>Loading...</p>
   </div>
+
 </section>
 
-<script src="js/api.js"></script>
+
+<!-- <script src="js/api.js"></script> -->
+ <script src="js/api.js?v=2"></script>
+
 <script>
-  requireAuth();
 
-  const claims = Auth.decodeAccessToken();
-  const user = Auth.getUser();
-  const email = user?.email || claims?.email || "there";
-  const role = user?.role || claims?.role || "STUDENT";
+requireAuth();
 
-  document.getElementById("dashboardTitle").textContent =
-    role === "TUTOR" ? "Tutor Dashboard" : role === "ADMIN" ? "Admin Dashboard" : "Student Dashboard";
-  document.getElementById("welcomeMsg").textContent = `Welcome back, ${email}`;
 
-  document.getElementById("logoutLink").addEventListener("click", async (e) => {
-    e.preventDefault();
-    await Api.logout();
-    window.location.href = "login.html";
+/* ================================
+   CURRENT USER
+================================ */
+
+const user = Auth.getUser();
+const claims = Auth.decodeAccessToken();
+
+const email =
+  user?.email ||
+  claims?.email ||
+  "there";
+
+const role =
+  user?.role ||
+  claims?.role ||
+  "STUDENT";
+
+
+/* ================================
+   ELEMENTS
+================================ */
+
+const dashboardTitle =
+  document.getElementById("dashboardTitle");
+
+const welcomeMsg =
+  document.getElementById("welcomeMsg");
+
+const welcomeSub =
+  document.getElementById("welcomeSub");
+
+const courseCards =
+  document.getElementById("courseCards");
+
+const adminLink =
+  document.getElementById("adminLink");
+
+const coursesLink =
+  document.getElementById("coursesLink");
+
+
+/* ================================
+   ROLE-SPECIFIC NAVIGATION
+================================ */
+
+if (role === "TUTOR") {
+
+  dashboardTitle.textContent =
+    "Tutor Dashboard";
+
+  welcomeSub.textContent =
+    "Manage your courses and track your students.";
+
+  /*
+   * IMPORTANT:
+   * Tutors must NOT go to the student
+   * courses.html page.
+   */
+  coursesLink.href =
+    "tutor-courses.html";
+
+  coursesLink.textContent =
+    "My Courses";
+
+}
+
+
+else if (role === "ADMIN") {
+
+  dashboardTitle.textContent =
+    "Admin Dashboard";
+
+  welcomeSub.textContent =
+    "Manage users, tutors and platform operations.";
+
+  adminLink.style.display =
+    "inline";
+
+  /*
+   * Admins don't need the student
+   * payment page.
+   */
+  coursesLink.href =
+    "admin-dashboard.html";
+
+  coursesLink.textContent =
+    "Course Management";
+
+}
+
+
+else {
+
+  dashboardTitle.textContent =
+    "Student Dashboard";
+
+  welcomeSub.textContent =
+    "Browse courses and continue your learning.";
+
+  /*
+   * Students use the marketplace.
+   */
+  coursesLink.href =
+    "courses.html";
+
+  coursesLink.textContent =
+    "Courses";
+
+}
+
+
+welcomeMsg.textContent =
+  `Welcome back, ${email}`;
+
+
+/* ================================
+   CURRENCY
+================================ */
+
+function formatKES(amount) {
+
+  return new Intl.NumberFormat(
+    "en-KE",
+    {
+      style: "currency",
+      currency: "KES",
+      maximumFractionDigits: 0
+    }
+  ).format(amount);
+
+}
+
+
+/* ================================
+   LOAD DASHBOARD
+================================ */
+
+async function loadDashboard() {
+
+  /*
+   * ADMIN
+   */
+  if (role === "ADMIN") {
+
+    courseCards.innerHTML = `
+
+      <div class="card">
+
+        <h4>Administrator Dashboard</h4>
+
+        <p>
+          Manage users, tutors,
+          approvals and platform operations.
+        </p>
+
+        <a href="admin-dashboard.html">
+          Open Admin Panel
+        </a>
+
+      </div>
+
+    `;
+
+    return;
+  }
+
+
+  /*
+   * TUTOR
+   *
+   * Do NOT load the student catalog here.
+   *
+   * The tutor has a completely separate
+   * course management page.
+   */
+  if (role === "TUTOR") {
+
+    courseCards.innerHTML = `
+
+      <div class="card">
+
+        <h4>Course Management</h4>
+
+        <p>
+          Create and manage your courses,
+          modules and learning materials.
+        </p>
+
+        <a href="tutor-courses.html">
+          Manage My Courses
+        </a>
+
+      </div>
+
+      <div class="card">
+
+        <h4>Create a Course</h4>
+
+        <p>
+          Start building a new course
+          for your students.
+        </p>
+
+        <a href="tutor-courses.html#createCourse">
+          Create Course
+        </a>
+
+      </div>
+
+    `;
+
+    return;
+  }
+
+
+  /*
+   * STUDENT
+   */
+  const result =
+    await Api.getCatalog();
+
+
+  if (!result || !result.ok) {
+
+    courseCards.innerHTML = `
+
+      <p class="form-error">
+        ${
+          result?.message ||
+          "Couldn't load courses."
+        }
+      </p>
+
+    `;
+
+    return;
+  }
+
+
+  const courses =
+    result.data?.courses || [];
+
+
+  if (courses.length === 0) {
+
+    courseCards.innerHTML = `
+
+      <p>
+        No courses published yet.
+      </p>
+
+    `;
+
+    return;
+  }
+
+
+  courseCards.innerHTML = "";
+
+
+  courses.slice(0, 6).forEach(course => {
+
+    const card =
+      document.createElement("div");
+
+    card.className =
+      "card";
+
+    card.innerHTML = `
+
+      <h4>
+        ${course.title}
+      </h4>
+
+      <p>
+        ${course.subject?.name || "General"}
+      </p>
+
+      <p>
+        ${formatKES(course.price)}
+      </p>
+
+      <a href="courses.html">
+        Browse Courses
+      </a>
+
+    `;
+
+    courseCards.appendChild(card);
+
   });
 
-  function formatKES(amount) {
-    return new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", maximumFractionDigits: 0 }).format(amount);
-  }
+}
 
-  async function loadCourses() {
-    const cardsEl = document.getElementById("courseCards");
-    const subEl = document.getElementById("welcomeSub");
 
-    const result = await Api.getCatalog();
-    if (!result || !result.ok) {
-      cardsEl.innerHTML = `<p class="form-error">${(result && result.message) || "Couldn't load courses."}</p>`;
-      return;
-    }
+/* ================================
+   LOGOUT
+================================ */
 
-    const courses = result.data.courses;
+document
+  .getElementById("logoutLink")
+  .addEventListener("click", async e => {
 
-    if (role === "TUTOR") {
-      subEl.textContent = "Manage your courses and track student progress.";
-    } else {
-      subEl.textContent = "Browse available courses, or check ones you're already enrolled in from the Courses page.";
-    }
+    e.preventDefault();
 
-    if (courses.length === 0) {
-      cardsEl.innerHTML = "<p>No courses published yet.</p>";
-      return;
-    }
+    await Api.logout();
 
-    cardsEl.innerHTML = "";
-    courses.slice(0, 6).forEach((course) => {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <h4>${course.title}</h4>
-        <p>${course.subject?.name || "General"} · ${formatKES(course.price)}</p>
-        <a href="courses.html">Open</a>
-      `;
-      cardsEl.appendChild(card);
-    });
-  }
+    window.location.href =
+      "login.html";
 
-  loadCourses();
+  });
+
+
+/* ================================
+   START
+================================ */
+
+loadDashboard();
+
 </script>
 
 </body>

@@ -1,68 +1,917 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login — EduConnect</title>
-<link rel="stylesheet" href="CSS/style.css">
-</head>
-<body>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<div class="form-container">
-  <h2>Login</h2>
+  <title>Sign In — EduConnect</title>
 
-  <p class="form-error" id="formError" hidden></p>
+  <link rel="stylesheet" href="CSS/style.css">
 
-  <form id="loginForm">
-    <div class="input-group">
-      <label for="email">Email</label>
-      <input type="email" id="email" placeholder="you@example.com" required>
-    </div>
-    <div class="input-group">
-      <label for="password">Password</label>
-      <input type="password" id="password" placeholder="Your password" required>
-    </div>
-    <button type="submit" class="btn" id="submitBtn">Login</button>
-  </form>
+  <style>
+    /* =========================================================
+       EDUCONNECT LOGIN PAGE
+       Presentation only — authentication functionality retained
+       ========================================================= */
 
-  <p>No account? <a href="signup.html">Sign Up</a></p>
-</div>
-
-<script src="js/api.js"></script>
-<script>
-  const form = document.getElementById("loginForm");
-  const errorEl = document.getElementById("formError");
-  const submitBtn = document.getElementById("submitBtn");
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    errorEl.hidden = true;
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Logging in...";
-
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
-
-    const result = await Api.login(email, password);
-
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Login";
-
-    if (!result || !result.ok) {
-      errorEl.textContent = (result && result.message) || "Couldn't connect to the server.";
-      errorEl.hidden = false;
-      return;
+    :root {
+      --login-navy: #172033;
+      --login-navy-light: #24314a;
+      --login-accent: #315c8c;
+      --login-accent-hover: #264d79;
+      --login-text: #172033;
+      --login-muted: #6b7280;
+      --login-border: #dfe4ea;
+      --login-background: #f4f6f8;
+      --login-white: #ffffff;
+      --login-error-bg: #fef2f2;
+      --login-error-text: #b42318;
+      --login-shadow: 0 24px 60px rgba(23, 32, 51, 0.10);
     }
 
-    Auth.setSession({
-      accessToken: result.data.accessToken,
-      refreshToken: result.data.refreshToken,
-      user: result.data.user,
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+      background:
+        radial-gradient(
+          circle at 10% 10%,
+          rgba(49, 92, 140, 0.08),
+          transparent 32%
+        ),
+        radial-gradient(
+          circle at 90% 90%,
+          rgba(23, 32, 51, 0.06),
+          transparent 35%
+        ),
+        var(--login-background);
+
+      color: var(--login-text);
+    }
+
+    /* =========================================================
+       PAGE LAYOUT
+       ========================================================= */
+
+    .login-page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(420px, 520px);
+    }
+
+    /* =========================================================
+       BRAND PANEL
+       ========================================================= */
+
+    .login-brand-panel {
+      position: relative;
+      overflow: hidden;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+
+      padding: 48px clamp(32px, 6vw, 90px);
+
+      background:
+        linear-gradient(
+          145deg,
+          #182236 0%,
+          #1d2b43 55%,
+          #263c58 100%
+        );
+
+      color: white;
+    }
+
+    .login-brand-panel::before {
+      content: "";
+      position: absolute;
+
+      width: 420px;
+      height: 420px;
+
+      right: -180px;
+      top: -160px;
+
+      border-radius: 50%;
+
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow:
+        0 0 0 80px rgba(255, 255, 255, 0.025),
+        0 0 0 160px rgba(255, 255, 255, 0.018);
+    }
+
+    .login-brand-panel::after {
+      content: "";
+
+      position: absolute;
+
+      width: 260px;
+      height: 260px;
+
+      left: -140px;
+      bottom: -100px;
+
+      border-radius: 50%;
+
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .brand-content,
+    .brand-footer {
+      position: relative;
+      z-index: 2;
+    }
+
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+
+      color: white;
+      text-decoration: none;
+
+      font-size: 1.35rem;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-logo-mark {
+      width: 40px;
+      height: 40px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 11px;
+
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    .brand-copy {
+      max-width: 590px;
+      margin-top: 110px;
+    }
+
+    .brand-eyebrow {
+      margin: 0 0 18px;
+
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+
+      color: rgba(255, 255, 255, 0.62);
+    }
+
+    .brand-copy h1 {
+      margin: 0;
+
+      max-width: 620px;
+
+      font-size: clamp(2.5rem, 4vw, 4.6rem);
+      line-height: 1.04;
+      letter-spacing: -0.045em;
+      font-weight: 750;
+    }
+
+    .brand-copy h1 span {
+      color: #a9bfd6;
+    }
+
+    .brand-copy p {
+      max-width: 540px;
+
+      margin: 28px 0 0;
+
+      font-size: 1.08rem;
+      line-height: 1.75;
+
+      color: rgba(255, 255, 255, 0.70);
+    }
+
+    .learning-points {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+
+      margin-top: 34px;
+    }
+
+    .learning-point {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+
+      padding: 9px 13px;
+
+      border-radius: 999px;
+
+      background: rgba(255, 255, 255, 0.065);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+
+      color: rgba(255, 255, 255, 0.76);
+
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .learning-point::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+
+      border-radius: 50%;
+
+      background: #91abc5;
+    }
+
+    .brand-footer {
+      color: rgba(255, 255, 255, 0.42);
+      font-size: 0.78rem;
+    }
+
+    /* =========================================================
+       LOGIN PANEL
+       ========================================================= */
+
+    .login-form-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 40px;
+
+      background: rgba(255, 255, 255, 0.62);
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .mobile-brand {
+      display: none;
+    }
+
+    .login-card {
+      background: var(--login-white);
+
+      border: 1px solid rgba(23, 32, 51, 0.08);
+      border-radius: 18px;
+
+      padding: clamp(28px, 4vw, 42px);
+
+      box-shadow: var(--login-shadow);
+    }
+
+    .login-heading {
+      margin-bottom: 30px;
+    }
+
+    .login-heading h2 {
+      margin: 0 0 9px;
+
+      font-size: 1.85rem;
+      line-height: 1.2;
+
+      letter-spacing: -0.025em;
+      font-weight: 750;
+
+      color: var(--login-text);
+    }
+
+    .login-heading p {
+      margin: 0;
+
+      color: var(--login-muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    /* =========================================================
+       ERROR MESSAGE
+       ========================================================= */
+
+    .form-error {
+      margin: 0 0 20px;
+      padding: 12px 14px;
+
+      border-radius: 9px;
+
+      background: var(--login-error-bg);
+      border: 1px solid #fecdca;
+
+      color: var(--login-error-text);
+
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    /* =========================================================
+       FORM
+       ========================================================= */
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+
+      margin-bottom: 8px;
+
+      color: #344054;
+
+      font-size: 0.84rem;
+      font-weight: 650;
+    }
+
+    .input-group input {
+      width: 100%;
+      height: 50px;
+
+      padding: 0 14px;
+
+      border: 1px solid var(--login-border);
+      border-radius: 9px;
+
+      background: #fbfcfd;
+
+      color: var(--login-text);
+
+      font-family: inherit;
+      font-size: 0.94rem;
+
+      outline: none;
+
+      transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+    }
+
+    .input-group input::placeholder {
+      color: #98a2b3;
+    }
+
+    .input-group input:hover {
+      border-color: #c7ced8;
+    }
+
+    .input-group input:focus {
+      background: white;
+
+      border-color: var(--login-accent);
+
+      box-shadow:
+        0 0 0 3px rgba(49, 92, 140, 0.11);
+    }
+
+    /* =========================================================
+       LOGIN BUTTON
+       ========================================================= */
+
+    .login-button {
+      width: 100%;
+      min-height: 50px;
+
+      margin-top: 4px;
+
+      border: 0;
+      border-radius: 9px;
+
+      background: var(--login-navy);
+
+      color: white;
+
+      font-family: inherit;
+      font-size: 0.94rem;
+      font-weight: 700;
+
+      cursor: pointer;
+
+      transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .login-button:hover:not(:disabled) {
+      background: var(--login-accent-hover);
+
+      box-shadow:
+        0 8px 20px rgba(23, 32, 51, 0.14);
+
+      transform: translateY(-1px);
+    }
+
+    .login-button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .login-button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    /* =========================================================
+       SIGN UP
+       ========================================================= */
+
+    .signup-text {
+      margin: 24px 0 0;
+
+      text-align: center;
+
+      color: var(--login-muted);
+
+      font-size: 0.88rem;
+    }
+
+    .signup-text a {
+      color: var(--login-accent);
+
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .signup-text a:hover {
+      text-decoration: underline;
+    }
+
+    .login-note {
+      margin: 22px 0 0;
+      padding-top: 20px;
+
+      border-top: 1px solid #edf0f3;
+
+      text-align: center;
+
+      color: #98a2b3;
+
+      font-size: 0.75rem;
+      line-height: 1.6;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @media (max-width: 900px) {
+
+      .login-page {
+        grid-template-columns: 1fr;
+      }
+
+      .login-brand-panel {
+        display: none;
+      }
+
+      .login-form-panel {
+        min-height: 100vh;
+
+        padding:
+          32px 20px;
+      }
+
+      .mobile-brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        margin-bottom: 22px;
+      }
+
+      .mobile-brand .brand-logo {
+        color: var(--login-navy);
+      }
+
+      .mobile-brand .brand-logo-mark {
+        background: var(--login-navy);
+        border-color: var(--login-navy);
+
+        color: white;
+      }
+
+      .login-container {
+        max-width: 440px;
+      }
+    }
+
+    @media (max-width: 480px) {
+
+      .login-form-panel {
+        padding: 20px 15px;
+      }
+
+      .login-card {
+        padding: 25px 20px;
+        border-radius: 14px;
+        box-shadow: 0 12px 35px rgba(23, 32, 51, 0.08);
+      }
+
+      .login-heading {
+        margin-bottom: 25px;
+      }
+
+      .login-heading h2 {
+        font-size: 1.6rem;
+      }
+
+      .input-group {
+        margin-bottom: 17px;
+      }
+
+      .input-group input {
+        height: 48px;
+      }
+
+      .login-button {
+        min-height: 48px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      .input-group input,
+      .login-button {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="login-page">
+
+    <!-- =======================================================
+         BRAND / MARKETING PANEL
+         ======================================================= -->
+
+    <section class="login-brand-panel">
+
+      <div class="brand-content">
+
+        <a href="index.html" class="brand-logo">
+          <span class="brand-logo-mark">E</span>
+          <span>EduConnect</span>
+        </a>
+
+        <div class="brand-copy">
+
+          <p class="brand-eyebrow">
+            Learning. Skills. Progress.
+          </p>
+
+          <h1>
+            Continue your
+            <span>learning journey.</span>
+          </h1>
+
+          <p>
+            Access your courses, connect with expert tutors,
+            and keep building the knowledge and skills that
+            move you forward.
+          </p>
+
+          <div class="learning-points">
+            <span class="learning-point">
+              Expert-led courses
+            </span>
+
+            <span class="learning-point">
+              Mathematics &amp; Programming
+            </span>
+
+            <span class="learning-point">
+              Learn at your pace
+            </span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="brand-footer">
+        EduConnect &copy; 2026. A better way to learn.
+      </div>
+
+    </section>
+
+
+    <!-- =======================================================
+         LOGIN FORM
+         ======================================================= -->
+
+    <section class="login-form-panel">
+
+      <div class="login-container">
+
+        <!-- Visible only on smaller screens -->
+        <div class="mobile-brand">
+
+          <a href="index.html" class="brand-logo">
+
+            <span class="brand-logo-mark">
+              E
+            </span>
+
+            <span>
+              EduConnect
+            </span>
+
+          </a>
+
+        </div>
+
+
+        <div class="login-card">
+
+          <div class="login-heading">
+
+            <h2>
+              Welcome back
+            </h2>
+
+            <p>
+              Sign in to continue to your EduConnect account.
+            </p>
+
+          </div>
+
+
+          <p
+            class="form-error"
+            id="formError"
+            hidden
+          ></p>
+
+
+          <form id="loginForm">
+
+            <div class="input-group">
+
+              <label for="email">
+                Email address
+              </label>
+
+              <input
+                type="email"
+                id="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                required
+              >
+
+            </div>
+
+
+            <div class="input-group">
+
+              <label for="password">
+                Password
+              </label>
+
+              <input
+                type="password"
+                id="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+              >
+
+            </div>
+
+
+            <button
+              type="submit"
+              class="login-button"
+              id="submitBtn"
+            >
+              Login
+            </button>
+
+          </form>
+
+
+          <p class="signup-text">
+
+            Don't have an account?
+
+            <a href="signup.html">
+              Create one
+            </a>
+
+          </p>
+
+
+          <p class="login-note">
+            Your account gives you access to your courses,
+            learning progress, and EduConnect services.
+          </p>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- =========================================================
+       API CLIENT — FUNCTIONALITY UNCHANGED
+       ========================================================= -->
+
+  <script src="js/api.js?v=2"></script>
+
+
+  <script>
+
+    const form =
+      document.getElementById("loginForm");
+
+    const errorEl =
+      document.getElementById("formError");
+
+    const submitBtn =
+      document.getElementById("submitBtn");
+
+
+    form.addEventListener("submit", async (e) => {
+
+      e.preventDefault();
+
+      errorEl.hidden = true;
+
+      submitBtn.disabled = true;
+
+      submitBtn.textContent =
+        "Logging in...";
+
+
+      const email =
+        document
+          .getElementById("email")
+          .value
+          .trim();
+
+
+      const password =
+        document
+          .getElementById("password")
+          .value;
+
+
+      try {
+
+        const result =
+          await Api.login(
+            email,
+            password
+          );
+
+
+        console.log(
+          "LOGIN RESPONSE:",
+          result
+        );
+
+
+        if (!result || !result.ok) {
+
+          errorEl.textContent =
+            (result && result.message) ||
+            "Invalid email or password.";
+
+          errorEl.hidden = false;
+
+          return;
+        }
+
+
+        /*
+         * Save authenticated session.
+         */
+
+        Auth.setSession({
+
+          accessToken:
+            result.data.accessToken,
+
+          refreshToken:
+            result.data.refreshToken,
+
+          user:
+            result.data.user
+
+        });
+
+
+        /*
+         * Get the authenticated user's role.
+         */
+
+        const role =
+          result.data.user?.role;
+
+
+        console.log(
+          "LOGIN USER:",
+          result.data.user
+        );
+
+
+        console.log(
+          "LOGIN ROLE:",
+          role
+        );
+
+
+        /*
+         * Redirect according to role.
+         */
+
+        if (role === "ADMIN") {
+
+          window.location.href =
+            "admin-dashboard.html";
+
+          return;
+        }
+
+
+        if (role === "TUTOR") {
+
+          window.location.href =
+            "dashboard.html";
+
+          return;
+        }
+
+
+        /*
+         * STUDENT
+         */
+
+        window.location.href =
+          "dashboard.html";
+
+      }
+
+      catch (error) {
+
+        console.error(
+          "Login error:",
+          error
+        );
+
+        errorEl.textContent =
+          "Something went wrong while logging in. Please try again.";
+
+        errorEl.hidden = false;
+
+      }
+
+      finally {
+
+        submitBtn.disabled = false;
+
+        submitBtn.textContent =
+          "Login";
+
+      }
+
     });
 
-    window.location.href = "dashboard.html";
-  });
-</script>
+  </script>
 
 </body>
 </html>
