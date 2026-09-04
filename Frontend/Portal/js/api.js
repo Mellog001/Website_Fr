@@ -340,11 +340,26 @@ var Api = {
 getPendingEnrollments: function() {
   return apiFetch("/admin/enrollments/pending");
 },
-activateEnrollment: function(enrollmentId) {
-  return apiFetch("/admin/enrollments/" + enrollmentId + "/activate", {
-    method: "POST"
-  });
-},
+  activateEnrollment: function(enrollmentId) {
+    return apiFetch("/admin/enrollments/" + enrollmentId + "/activate", {
+      method: "POST"
+    });
+  },
+
+  // ==========================================================
+  // MODULES & MATERIALS
+  // ==========================================================
+  createModule: function(courseId, title, description, order) {
+    return apiFetch("/courses/modules", {
+      method: "POST",
+      body: { courseId: courseId, title: title, description: description, order: order }
+    });
+  },
+  createMaterial: function(moduleId, title, fileUrl, fileKey, fileType, size) {
+    return apiFetch("/courses/materials", {
+      method: "POST",
+      body: { moduleId: moduleId, title: title, fileUrl: fileUrl, fileKey: fileKey, fileType: fileType, size: size }
+    });
   },
 
   // ==========================================================
