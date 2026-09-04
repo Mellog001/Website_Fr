@@ -148,9 +148,6 @@ Open `Frontend/Portal/index.html` with Live Server (or any static server) — it
 - [ ] Assessment and submission workflow
 - [ ] Production deployment and custom domain
 
-## 🤝 Contributing
-
-This is currently a solo project in active development. Issues and suggestions are welcome via GitHub Issues.
 
 ## 📄 License
 
