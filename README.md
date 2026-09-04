@@ -1,97 +1,154 @@
-# 🎓 Website_Fr
+# 🎓 EduConnect
 
-An interactive online schooling website built with HTML, CSS, and JavaScript. Website_Fr provides a simple, responsive learning portal for students and educators to browse courses, view resources, and interact with learning content.
+**EduConnect** is an online tutoring platform that connects students with tutors for interactive learning. Students can browse courses, enroll and pay via M-Pesa, and access course materials — while tutors can create courses, manage content, and track enrollments.
 
-## 📋 Table of Contents
+## ✨ Features
 
-- [Overview](#overview)
-- [Features](#features)
-- [Project structure](#project-structure)
-- [Technologies](#technologies)
-- [Getting started](#getting-started)
-- [Usage](#usage)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+- **Authentication** — Secure signup/login with email verification and JWT-based sessions
+- **Role-based access** — Separate experiences for Students, Tutors, and Admins
+- **Course catalog** — Browse, search, and filter published courses by subject
+- **Course management** — Tutors can create, edit, publish/unpublish courses and upload cover images
+- **Course materials** — Modules and learning materials organized per course
+- **M-Pesa integration** — Students enroll and pay via Safaricom's Daraja API (STK push)
+- **Admin dashboard** — Platform oversight and tutor verification
+- **Email notifications** — Verification emails and account notifications via SMTP
 
-## Overview
+## 🛠️ Tech Stack
 
-Website_Fr is a front-end focused online schooling platform intended as a lightweight demonstration of course navigation, responsive layouts, and interactive UI using vanilla HTML, CSS and JavaScript. The project is suitable as a starting point for educators who want to present courses online or for students learning front-end web development.
+**Frontend**
+- HTML5, CSS3, vanilla JavaScript
+- No framework — lightweight, fast-loading portal pages
 
-## Features
+**Backend**
+- Node.js + Express
+- TypeScript
+- MySQL (via `mysql2`)
+- JWT authentication (`jsonwebtoken`, `bcryptjs`)
+- `nodemailer` for transactional email
+- `multer` for file uploads
+- `winston` for logging
+- `zod` for request validation
 
-- Interactive learning portal with course listings and resource pages
-- Responsive design for desktop and mobile
-- JavaScript-driven interactive elements (modals, tabs, simple form handling)
-- Clean, modern CSS styling and consistent branding
-- Organized assets folder for images and media
+## 📁 Project Structure
 
-## Project structure
+```
+Website_Fr/
+├── Frontend/
+│   └── Portal/          # HTML pages, CSS, and client-side JS
+│       ├── CSS/
+│       ├── js/
+│       ├── index.html
+│       ├── login.html
+│       ├── signup.html
+│       ├── dashboard.html
+│       ├── courses.html
+│       ├── tutor-courses.html
+│       └── admin-dashboard.html
+└── server/
+    ├── src/
+    │   ├── features/     # Auth, courses, tutors, payments, admin, etc.
+    │   ├── config/       # Database, env, logger config
+    │   ├── common/       # Middleware, error handling, shared services
+    │   ├── db/           # Schema (init.sql) and seed scripts
+    │   └── jobs/         # Background job processing
+    ├── tests/
+    └── package.json
+```
 
-A typical layout for this project looks like:
+## 🚀 Getting Started
 
-- index.html — landing / home page
-- about.html — about the platform / contact information
-- courses.html — courses listing page
-- css/
-  - styles.css — main stylesheet
-  - (optional) responsive.css — mobile tweaks
-- js/
-  - main.js — interactivity (navigation, UI widgets)
-- assets/
-  - images/ — images and icons
-  - media/ — optional audio/video resources
-- README.md — this file
-- LICENSE — project license (if present)
+### Prerequisites
 
-Adjust the structure above to match your repository if files are named differently.
+- [Node.js](https://nodejs.org/) (v18+ recommended)
+- [MySQL](https://dev.mysql.com/downloads/) (v8+)
+- A code editor (e.g. [VS Code](https://code.visualstudio.com/))
+- [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) extension (or any static file server) for the frontend
 
-## Technologies
+### 1. Clone the repository
 
-- HTML5
-- CSS3 (Flexbox / Grid, responsive breakpoints)
-- JavaScript (ES6+)
-- Static assets (images, fonts)
+```bash
+git clone https://github.com/Mellog001/Website_Fr.git
+cd Website_Fr
+```
 
-## Getting started
+### 2. Set up the backend
 
-1. Clone the repository:
-   - git clone https://github.com/Mellog001/Website_Fr.git
-2. Open the project folder and launch the site:
-   - Open `index.html` in your browser
-   - Or use a local server (recommended) for features that require it:
-     - Python 3: `python -m http.server 8000` then visit `http://localhost:8000`
+```bash
+cd server
+npm install
+```
 
-## Usage
+Create a `.env` file in the `server` folder with the following variables:
 
-- Browse the homepage for featured courses.
-- Use the Courses page to view available lessons and resource links.
-- Forms and interactive elements provide client-side behavior — extend the JavaScript to connect to a backend or add local storage as needed.
+```env
+# Server
+PORT=5000
+NODE_ENV=development
 
-## Development
+# Database (MySQL)
+DATABASE_URL="mysql://<user>:<password>@localhost:3306/educonnect"
 
-- Organize styles in `css/` and behavior in `js/`.
-- Keep images in `assets/images/`.
-- When adding new pages, update the main navigation in `index.html` and any shared header/footer includes.
-- For quicker iteration, use a live-reload extension or run a simple local server as shown above.
+# JWT Secrets
+JWT_ACCESS_SECRET="your_access_secret"
+JWT_REFRESH_SECRET="your_refresh_secret"
 
-## Contributing
+# M-Pesa Daraja (sandbox)
+MPESA_CONSUMER_KEY="your_consumer_key"
+MPESA_CONSUMER_SECRET="your_consumer_secret"
+MPESA_SHORTCODE="174379"
+MPESA_PASSKEY="your_passkey"
+MPESA_CALLBACK_URL="https://your-callback-url/api/v1/payments/mpesa-callback"
+MPESA_ENVIRONMENT="sandbox"
 
-Contributions are welcome! Suggested workflow:
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feat/your-feature`
-3. Commit your changes and push: `git push origin feat/your-feature`
-4. Open a pull request describing your changes.
+# SMTP (email)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="your_email@gmail.com"
+SMTP_PASS="your_app_password"
+EMAIL_FROM="your_email@gmail.com"
+```
 
-Please include a short description of what you changed and why. Keep changes focused and add comments where appropriate.
+> ⚠️ Never commit your real `.env` file. It's already excluded via `.gitignore`.
 
-## License
+### 3. Set up the database
 
-If you’d like to add a license, include a `LICENSE` file at the repository root (for example, MIT or Apache 2.0). If you want, I can add a recommended license file for you.
+Create the database and load the schema:
 
-## Contact
+```bash
+mysql -u root -p -e "CREATE DATABASE educonnect;"
+mysql -u root -p educonnect < src/db/init.sql
+```
 
-Maintainer: Mellog001
+### 4. Run the backend
 
-If you want changes to wording, more detail on the project structure (matching the repo exactly), or a specific license added, tell me which and I’ll update the README accordingly.
+```bash
+npm run dev
+```
+
+The API will be running at `http://localhost:5000`.
+
+### 5. Run the frontend
+
+Open `Frontend/Portal/index.html` with Live Server (or any static server) — it will typically run at `http://127.0.0.1:5500`.
+
+## 📜 Available Scripts (backend)
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the backend in development mode with hot reload |
+| `npm run build` | Compile TypeScript to JavaScript |
+| `npm start` | Run the compiled production build |
+| `npm test` | Run the test suite |
+| `npm run test:cov` | Run tests with coverage report |
+
+## 🗺️ Roadmap
+
+- [ ] Tutor course material upload page (`course-details.html`)
+- [ ] Student progress tracking
+- [ ] Assessment and submission workflow
+- [ ] Production deployment and custom domain
+
+
+## 📄 License
+
+This project is currently unlicensed. All rights reserved by the author.
