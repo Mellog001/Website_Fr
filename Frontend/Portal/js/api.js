@@ -415,13 +415,16 @@ getPendingEnrollments: function() {
         };
       }
       console.log("Step 2: Uploading file to:", uploadUrl);
-      var uploadResponse = await fetch(uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: {
-          'Content-Type': file.type
-        }
-      });
+var uploadFormData = new FormData();
+uploadFormData.append('file', file);
+
+var uploadResponse = await fetch(uploadUrl, {
+  method: "PUT",
+  body: uploadFormData,
+  headers: {
+    'Authorization': "Bearer " + Auth.getAccessToken()
+  }
+});
       console.log("Upload response status:", uploadResponse.status);
       if (!uploadResponse.ok) {
         var errorText = await uploadResponse.text();
