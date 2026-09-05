@@ -130,7 +130,7 @@ class EmailService {
    */
   public async sendPasswordResetEmail(email: string, token: string): Promise<void> {
     const subject = `EduConnect Academy - Password Reset Request`;
-    const resetUrl = `${env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    const resetUrl = `${env.FRONTEND_URL || 'http://localhost:3000'}/reset-password.html?token=${token}`;
     
     const text = `Hello,\n\nWe received a request to reset your password. Click the link below to set a new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour. If you didn't request this, you can safely ignore this email.\n\nEduConnect Team`;
     

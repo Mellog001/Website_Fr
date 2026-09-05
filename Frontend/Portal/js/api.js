@@ -231,6 +231,19 @@ var Api = {
     Auth.clearSession();
   },
 
+  forgotPassword: function(email) {
+    return apiFetch("/auth/forgot-password", {
+      method: "POST",
+      body: { email: email }
+    });
+  },
+  resetPassword: function(token, newPassword) {
+    return apiFetch("/auth/reset-password", {
+      method: "POST",
+      body: { token: token, newPassword: newPassword }
+    });
+  },
+
   // ==========================================================
   // COURSES
   // ==========================================================

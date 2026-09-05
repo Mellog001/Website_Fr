@@ -7,7 +7,13 @@ export const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  timezone: '+00:00',
+  timezone: 'Z',
+});
+
+// Ensure every new connection in the pool treats its session clock as UTC,
+// regardless of what timezone the MySQL server itself is configured with.
+pool.on('connection', function (connection) {
+  connection.query("SET time_zone='+00:00';");
 });
 
 // Verify connection on startup
