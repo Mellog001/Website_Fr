@@ -550,12 +550,16 @@ if (imageFile) {
             <p>${course.description ? course.description.substring(0, 100) + (course.description.length > 100 ? '...' : '') : "No description"}</p>
             <p><strong>Price:</strong> ${formatKES(course.price)}</p>
             <p><strong>Status:</strong> <span class="status-badge ${statusClass}">${statusText}</span></p>
-            <div class="course-actions">
+                       <div class="course-actions">
               <a href="course-details.html?id=${course.id}" class="btn btn-manage">Manage Course</a>
               <button onclick="togglePublishCourse('${course.id}', ${!isPublished})" class="btn ${isPublished ? 'btn-unpublish' : 'btn-publish'}">
                 ${isPublished ? 'Unpublish' : 'Publish'}
               </button>
+              <button onclick="triggerImageUpload('${course.id}')" class="btn" style="background:#607d8b;color:white;">
+                Change Image
+              </button>
             </div>
+            <input type="file" accept="image/*" style="display:none;" id="imageInput-${course.id}" onchange="handleImageChange('${course.id}', this)">
           `;
 
           myCourses.appendChild(card);
@@ -580,7 +584,42 @@ if (imageFile) {
       await Api.logout();
       window.location.href = "login.html";
     });
+      // ================================
+    // CHANGE COURSE IMAGE
+    // ================================
 
+    function triggerImageUpload(courseId) {
+      document.getElementById(`imageInput-${courseId}`).click();
+    }
+
+    async function handleImageChange(courseId, inputEl) {
+      const file = inputEl.files[0];
+      if (!file) return;
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("type", "course");
+
+        const uploadResult = await Api.uploadFile(formData);
+        if (!uploadResult || !uploadResult.ok) {
+          alert(uploadResult?.message || "Image upload failed.");
+          return;
+        }
+
+        const updateResult = await Api.updateCourse(courseId, { imageUrl: uploadResult.data.url });
+        if (!updateResult || !updateResult.ok) {
+          alert(updateResult?.message || "Failed to save the new image.");
+          return;
+        }
+
+        alert("Course image updated successfully!");
+        await loadMyCourses();
+      } catch (error) {
+        console.error("Image change error:", error);
+        alert("Something went wrong while updating the image.");
+      }
+    }
     // ================================
     // START
     // ================================

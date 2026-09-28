@@ -26,6 +26,7 @@ export const updateCourseSchema = z.object({
     description: z.string().min(10).optional(),
     price: z.number().min(0).optional(),
     isPublished: z.boolean().optional(),
+    imageUrl: z.string().url().optional(),
   }),
 });
 
