@@ -154,6 +154,96 @@ class EmailService {
 
     await this.sendEmail(email, subject, text, html);
   }
+
+  /**
+   * Enrollment Payment Instructions Email (sent to the student)
+   */
+  public async sendEnrollmentEmail(
+    studentEmail: string,
+    studentName: string,
+    courseTitle: string,
+    amount: number,
+    courseDescription: string,
+    enrollmentId: string
+  ): Promise<void> {
+    const amountNumber = typeof amount === 'string' ? parseFloat(amount) : amount;
+    const formattedAmount = amountNumber.toFixed(2);
+    const reference = enrollmentId.split('-')[0].toUpperCase();
+
+    const subject = `EduConnect - Complete Your Enrollment: ${courseTitle}`;
+
+    const text = `Hello ${studentName},\n\nThank you for requesting enrollment in "${courseTitle}".\n\nAmount due: KES ${formattedAmount}\nReference code: ${reference}\n\nPlease complete payment using one of the options below, and include your reference code so we can match your payment:\n\n1) Bank Transfer\nBank Name: [Your Bank Name]\nAccount Name: [Your Account Name]\nAccount Number: [Your Account Number]\nSWIFT Code: [Your SWIFT Code]\n\n2) International Transfer Services\nWestern Union / Ria / PayPal - contact us at ${env.EMAIL_FROM} for our receiving details for these services.\n\nOnce payment is received and confirmed, your enrollment will be activated and you will gain full access to the course.\n\nEduConnect Team`;
+
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #4A90E2; text-align: center;">EduConnect Academy</h2>
+        <hr style="border: 0; border-top: 1px dashed #eee;">
+        <p>Hello ${studentName},</p>
+        <p>Thank you for requesting enrollment in:</p>
+        <h3 style="margin: 5px 0;">${courseTitle}</h3>
+        <p style="color: #666; font-size: 14px;">${courseDescription}</p>
+        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
+          <span style="font-size: 14px; color: #666;">AMOUNT DUE</span><br>
+          <span style="font-size: 28px; font-weight: bold; color: #2E7D32;">KES ${formattedAmount}</span><br>
+          <span style="font-size: 13px; color: #888;">Reference Code: <strong>${reference}</strong></span>
+        </div>
+        <p><strong>Please pay using one of the following options, and include your reference code:</strong></p>
+        <div style="background: #fff; border: 1px solid #eee; border-radius: 6px; padding: 15px; margin-bottom: 12px;">
+          <p style="margin: 0 0 8px; font-weight: bold; color: #4A90E2;">Option 1: Bank Transfer</p>
+          <p style="margin: 2px 0; font-size: 14px;">Bank Name: [Your Bank Name]</p>
+          <p style="margin: 2px 0; font-size: 14px;">Account Name: [Your Account Name]</p>
+          <p style="margin: 2px 0; font-size: 14px;">Account Number: [Your Account Number]</p>
+          <p style="margin: 2px 0; font-size: 14px;">SWIFT Code: [Your SWIFT Code]</p>
+        </div>
+        <div style="background: #fff; border: 1px solid #eee; border-radius: 6px; padding: 15px;">
+          <p style="margin: 0 0 8px; font-weight: bold; color: #4A90E2;">Option 2: International Transfer Services</p>
+          <p style="margin: 2px 0; font-size: 14px;">Western Union / Ria / PayPal</p>
+          <p style="margin: 2px 0; font-size: 14px;">Contact us at <a href="mailto:${env.EMAIL_FROM}">${env.EMAIL_FROM}</a> for our receiving details.</p>
+        </div>
+        <p style="margin-top: 25px; font-size: 14px; color: #666;">Once your payment is confirmed, your enrollment will be activated and you will gain full access to the course.</p>
+        <p style="color: #888; font-size: 12px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; text-align: center;">
+          This is an automated notification. Please do not reply directly to this mail.
+        </p>
+      </div>
+    `;
+
+    await this.sendEmail(studentEmail, subject, text, html);
+  }
+
+  /**
+   * Enrollment Notification Email (sent to the admin)
+   */
+  public async sendAdminEnrollmentNotification(
+    studentEmail: string,
+    courseTitle: string,
+    amount: number,
+    enrollmentId: string
+  ): Promise<void> {
+    const amountNumber = typeof amount === 'string' ? parseFloat(amount) : amount;
+    const formattedAmount = amountNumber.toFixed(2);
+    const reference = enrollmentId.split('-')[0].toUpperCase();
+    const adminEmail = env.ADMIN_NOTIFICATION_EMAIL;
+
+    const subject = `New Enrollment Pending: ${courseTitle}`;
+    const text = `A new enrollment request needs your attention.\n\nStudent: ${studentEmail}\nCourse: ${courseTitle}\nAmount: KES ${formattedAmount}\nReference: ${reference}\n\nLog in to the admin dashboard to review and activate this enrollment once payment is confirmed.`;
+
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #4A90E2; text-align: center;">EduConnect Admin Alert</h2>
+        <hr style="border: 0; border-top: 1px dashed #eee;">
+        <p>A new enrollment request needs your attention:</p>
+        <ul style="font-size: 14px; line-height: 1.8;">
+          <li><strong>Student:</strong> ${studentEmail}</li>
+          <li><strong>Course:</strong> ${courseTitle}</li>
+          <li><strong>Amount:</strong> KES ${formattedAmount}</li>
+          <li><strong>Reference:</strong> ${reference}</li>
+        </ul>
+        <p>Log in to the admin dashboard to review and activate this enrollment once payment is confirmed.</p>
+      </div>
+    `;
+
+    await this.sendEmail(adminEmail, subject, text, html);
+  }
 }
 
 export const emailService = new EmailService();

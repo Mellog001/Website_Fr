@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — EduConnect</title>
+  <link rel="stylesheet" href="CSS/style.css">
+</head>
+<body>
+
+<header>
+  <h2>Profile</h2>
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="courses.html" id="coursesLink">Courses</a>
+    <a href="profile.html">Profile</a>
+    <a href="about.html">About Us</a>
+    <a href="admin-dashboard.html" id="adminLink" style="display:none;">Admin</a>
+    <a href="#" id="logoutLink">Logout</a>
+  </nav>
+</header>
+
+<main style="max-width: 640px; margin: 2rem auto; padding: 0 1rem;">
+
+  <section class="card">
+    <h3>Account</h3>
+    <p class="form-error" id="accountError" hidden></p>
+    <div id="accountInfo">
+      <p>Loading account details...</p>
+    </div>
+  </section>
+
+  <section class="card" id="tutorSection" style="display:none; margin-top: 1.5rem;">
+    <h3>Tutor Profile</h3>
+    <p>This information is shown to students browsing your courses.</p>
+
+    <p class="form-error" id="tutorError" hidden></p>
+    <p class="form-success" id="tutorSuccess" hidden></p>
+
+    <form id="tutorForm">
+      <div class="input-group">
+        <label for="bio">Bio</label>
+        <textarea id="bio" rows="5" placeholder="Tell students a bit about your background and teaching style..." maxlength="1000"></textarea>
+        <small>Up to 1000 characters.</small>
+      </div>
+
+      <div class="input-group">
+        <label for="qualifications">Qualifications (one URL per line)</label>
+        <textarea id="qualifications" rows="3" placeholder="https://example.com/my-certificate.pdf"></textarea>
+        <small>Links to certificates, degrees, or portfolios. One per line.</small>
+      </div>
+
+      <button type="submit" class="btn" id="tutorSaveBtn">Save Tutor Profile</button>
+    </form>
+  </section>
+
+  <section class="card" id="passwordSection" style="margin-top: 1.5rem;">
+    <h3>Change Password</h3>
+
+    <p class="form-error" id="passwordError" hidden></p>
+    <p class="form-success" id="passwordSuccess" hidden></p>
+
+    <form id="passwordForm">
+      <div class="input-group">
+        <label for="oldPassword">Current Password</label>
+        <input type="password" id="oldPassword" required>
+      </div>
+
+      <div class="input-group">
+        <label for="newPassword">New Password</label>
+        <input type="password" id="newPassword" required>
+        <small>Must include an uppercase letter, a lowercase letter, and a number.</small>
+      </div>
+
+      <div class="input-group">
+        <label for="confirmNewPassword">Confirm New Password</label>
+        <input type="password" id="confirmNewPassword" required>
+      </div>
+
+      <button type="submit" class="btn" id="passwordSaveBtn">Update Password</button>
+    </form>
+  </section>
+
+</main>
+
+<script src="js/api.js"></script>
+<script>
+  requireAuth();
+
+  const user = Auth.getUser();
+  const claims = Auth.decodeAccessToken();
+  const role = (user && user.role) || (claims && claims.role) || "STUDENT";
+
+  if (role === "ADMIN") {
+    document.getElementById("adminLink").style.display = "inline";
+  }
+  if (role === "TUTOR") {
+    document.getElementById("tutorSection").style.display = "block";
+  }
+
+  // ================================
+  // ACCOUNT INFO
+  // ================================
+
+  async function loadAccountInfo() {
+    const box = document.getElementById("accountInfo");
+    const errorEl = document.getElementById("accountError");
+
+    const result = await Api.getMe();
+    if (!result || !result.ok) {
+      errorEl.textContent = (result && result.message) || "Unable to load account details.";
+      errorEl.hidden = false;
+      box.innerHTML = "";
+      return;
+    }
+
+    const me = result.data;
+    const verifiedBadge = me.isEmailVerified
+      ? '<span style="color:#2e7d32;font-weight:bold;">Verified</span>'
+      : '<span style="color:#b42318;font-weight:bold;">Not verified</span>';
+    const memberSince = me.createdAt ? new Date(me.createdAt).toLocaleDateString() : "—";
+
+    box.innerHTML = `
+      <p><strong>Email:</strong> ${escapeHtml(me.email)}</p>
+      <p><strong>Role:</strong> ${escapeHtml(me.role)}</p>
+      <p><strong>Email status:</strong> ${verifiedBadge}</p>
+      <p><strong>Member since:</strong> ${escapeHtml(memberSince)}</p>
+    `;
+  }
+
+  // ================================
+  // TUTOR PROFILE
+  // ================================
+
+  async function loadTutorProfile() {
+    if (role !== "TUTOR") return;
+
+    const errorEl = document.getElementById("tutorError");
+    const result = await Api.getTutorProfile();
+
+    if (!result || !result.ok) {
+      errorEl.textContent = (result && result.message) || "Unable to load tutor profile.";
+      errorEl.hidden = false;
+      return;
+    }
+
+    document.getElementById("bio").value = result.data.bio || "";
+    const quals = result.data.qualifications;
+    document.getElementById("qualifications").value = Array.isArray(quals) ? quals.join("\n") : "";
+  }
+
+  const tutorForm = document.getElementById("tutorForm");
+  if (tutorForm) {
+    tutorForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const errorEl = document.getElementById("tutorError");
+      const successEl = document.getElementById("tutorSuccess");
+      const saveBtn = document.getElementById("tutorSaveBtn");
+      errorEl.hidden = true;
+      successEl.hidden = true;
+
+      const bio = document.getElementById("bio").value.trim();
+      const qualifications = document.getElementById("qualifications").value
+        .split("\n")
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving...";
+
+      try {
+        const result = await Api.updateTutorProfile({ bio, qualifications });
+        if (!result || !result.ok) {
+          errorEl.textContent = (result && result.message) || "Failed to update profile.";
+          errorEl.hidden = false;
+          return;
+        }
+        successEl.textContent = "Tutor profile updated successfully.";
+        successEl.hidden = false;
+      } catch (err) {
+        console.error("Update tutor profile error:", err);
+        errorEl.textContent = "Something went wrong. Please try again.";
+        errorEl.hidden = false;
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Tutor Profile";
+      }
+    });
+  }
+
+  // ================================
+  // CHANGE PASSWORD
+  // ================================
+
+  document.getElementById("passwordForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const errorEl = document.getElementById("passwordError");
+    const successEl = document.getElementById("passwordSuccess");
+    const saveBtn = document.getElementById("passwordSaveBtn");
+    errorEl.hidden = true;
+    successEl.hidden = true;
+
+    const oldPassword = document.getElementById("oldPassword").value;
+    const newPassword = document.getElementById("newPassword").value;
+    const confirmNewPassword = document.getElementById("confirmNewPassword").value;
+
+    if (newPassword !== confirmNewPassword) {
+      errorEl.textContent = "New passwords do not match.";
+      errorEl.hidden = false;
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Updating...";
+
+    try {
+      const result = await Api.changePassword(oldPassword, newPassword);
+      if (!result || !result.ok) {
+        errorEl.textContent = (result && result.message) || "Failed to update password.";
+        errorEl.hidden = false;
+        return;
+      }
+      successEl.textContent = "Password updated successfully.";
+      successEl.hidden = false;
+      document.getElementById("passwordForm").reset();
+    } catch (err) {
+      console.error("Change password error:", err);
+      errorEl.textContent = "Something went wrong. Please try again.";
+      errorEl.hidden = false;
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Update Password";
+    }
+  });
+
+  // ================================
+  // LOGOUT
+  // ================================
+
+  document.getElementById("logoutLink").addEventListener("click", async (e) => {
+    e.preventDefault();
+    await Api.logout();
+    window.location.href = "login.html";
+  });
+
+  // ================================
+  // INIT
+  // ================================
+
+  loadAccountInfo();
+  loadTutorProfile();
+</script>
+
+</body>
+</html>

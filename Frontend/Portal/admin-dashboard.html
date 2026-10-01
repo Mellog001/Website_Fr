@@ -385,9 +385,9 @@
         card.innerHTML = `
           <div class="admin-card-header">
             <div>
-              <h3>📚 ${enrollment.course_title}</h3>
+              <h3>📚 ${escapeHtml(enrollment.course_title)}</h3>
               <div class="admin-meta">
-                <span><strong>Student:</strong> ${enrollment.student_email}</span>
+                <span><strong>Student:</strong> ${escapeHtml(enrollment.student_email)}</span>
                 <span><strong>Amount:</strong> <span class="badge-amount">KES ${enrollment.course_price}</span></span>
                 <span><strong>Requested:</strong> ${formatDate(enrollment.created_at)}</span>
                 <span><strong>Status:</strong> ${getStatusBadge(enrollment.status)}</span>

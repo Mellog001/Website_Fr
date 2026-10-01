@@ -4,6 +4,7 @@ import pool from '../../config/database';
 import { AppError } from '../../common/errors/app-error';
 import { logger } from '../../config/logger';
 import { RowDataPacket } from 'mysql2';
+import { emailService } from '../../common/services/email.service';
 
 export class CoursesService {
   /**
@@ -387,11 +388,102 @@ export class CoursesService {
   }
 
   /**
+   * Student requests enrollment in a published course (creates a PENDING enrollment
+   * and emails the student payment instructions plus a copy to the admin).
+   * NOTE: no real payment gateway is wired in yet - activation is manual, by an admin,
+   * once payment has been confirmed off-platform.
+   */
+  public async enrollInCourse(studentId: string, courseId: string) {
+    const [courseRows] = await pool.execute<RowDataPacket[]>(
+      'SELECT id, title, description, price FROM courses WHERE id = ? AND is_published = 1',
+      [courseId]
+    );
+    const course = courseRows[0];
+    if (!course) {
+      throw AppError.notFound('Course not found or is not currently published.');
+    }
+
+    const [existingRows] = await pool.execute<RowDataPacket[]>(
+      'SELECT id, status FROM enrollments WHERE student_id = ? AND course_id = ?',
+      [studentId, courseId]
+    );
+    if (existingRows.length > 0) {
+      const status = existingRows[0].status;
+      if (status === 'PENDING') {
+        throw AppError.conflict('You already have a pending enrollment request for this course.');
+      }
+      if (status === 'ACTIVE' || status === 'COMPLETED') {
+        throw AppError.conflict('You are already enrolled in this course.');
+      }
+    }
+
+    const [studentRows] = await pool.execute<RowDataPacket[]>(
+      'SELECT email FROM users WHERE id = ?',
+      [studentId]
+    );
+    const student = studentRows[0];
+    if (!student) {
+      throw AppError.notFound('Student account not found.');
+    }
+    const studentName = student.email.split('@')[0];
+
+    const enrollmentId = uuidv4();
+    await pool.execute(
+      "INSERT INTO enrollments (id, student_id, course_id, status, progress) VALUES (?, ?, ?, 'PENDING', 0)",
+      [enrollmentId, studentId, courseId]
+    );
+
+    // Email delivery failures must never break the enrollment request itself
+    try {
+      await emailService.sendEnrollmentEmail(
+        student.email,
+        studentName,
+        course.title,
+        course.price,
+        course.description,
+        enrollmentId
+      );
+      await emailService.sendAdminEnrollmentNotification(student.email, course.title, course.price, enrollmentId);
+    } catch (err) {
+      logger.error('Failed to send enrollment emails:', err as any);
+    }
+
+    logger.info(`\ud83d\udcdd Enrollment requested: student ${studentId} -> course ${courseId} (enrollment ${enrollmentId})`);
+
+    return {
+      enrollmentId,
+      status: 'PENDING',
+      message: 'Check your email for payment instructions.',
+      courseTitle: course.title,
+      amount: course.price,
+    };
+  }
+
+  /**
+   * Get the current enrollment status of a student for a given course
+   */
+  public async getEnrollmentStatus(studentId: string, courseId: string) {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      'SELECT id, status, progress, created_at FROM enrollments WHERE student_id = ? AND course_id = ?',
+      [studentId, courseId]
+    );
+    if (rows.length === 0) {
+      return { enrolled: false, status: null };
+    }
+    return {
+      enrolled: true,
+      status: rows[0].status,
+      progress: rows[0].progress,
+      requestedAt: rows[0].created_at,
+    };
+  }
+
+  /**
    * Get all pending enrollments (Admin only)
    */
-  public async getPendingEnrollments() {
+  public async getPendingEnrollments(_userId?: string) {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT e.id, e.status, e.created_at,
+      `SELECT e.id AS enrollment_id, e.status, e.created_at,
               c.title AS course_title, c.price AS course_price,
               u.email AS student_email
        FROM enrollments e
@@ -401,20 +493,13 @@ export class CoursesService {
        ORDER BY e.created_at ASC`
     );
 
-    return rows.map((row: any) => ({
-      id: row.id,
-      status: row.status,
-      requestedAt: row.created_at,
-      courseTitle: row.course_title,
-      amount: row.course_price,
-      studentEmail: row.student_email,
-    }));
+    return { pending: rows };
   }
 
   /**
    * Approve and activate a pending enrollment (Admin only)
    */
-  public async activateEnrollment(enrollmentId: string) {
+  public async activateEnrollment(_adminUserId: string, enrollmentId: string) {
     const [rows] = await pool.execute<RowDataPacket[]>(
       'SELECT id, status FROM enrollments WHERE id = ?',
       [enrollmentId]

@@ -19,12 +19,12 @@ export const checkMaterialAccess = async (req: Request, _res: Response, next: Ne
     // Fetch material with module → course → tutor chain via JOINs
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT m.id AS material_id, 
-              mod.id AS module_id, 
+              md.id AS module_id, 
               c.id AS course_id, c.title AS course_title, c.tutor_id,
               tp.user_id AS tutor_user_id
        FROM materials m
-       JOIN modules mod ON mod.id = m.module_id
-       JOIN courses c ON c.id = mod.course_id
+       JOIN modules md ON md.id = m.module_id
+       JOIN courses c ON c.id = md.course_id
        JOIN tutor_profiles tp ON tp.id = c.tutor_id
        WHERE m.id = ?`,
       [materialId]
@@ -48,7 +48,7 @@ export const checkMaterialAccess = async (req: Request, _res: Response, next: Ne
 
     // 3. Students must have a SUCCESSFUL/ACTIVE enrollment
     const [enrollmentRows] = await pool.execute<RowDataPacket[]>(
-      'SELECT id FROM enrollments WHERE student_id = ? AND course_id = ?',
+      "SELECT id FROM enrollments WHERE student_id = ? AND course_id = ? AND status IN ('ACTIVE', 'COMPLETED')",
       [req.user.id, record.course_id]
     );
 

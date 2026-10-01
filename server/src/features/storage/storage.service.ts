@@ -35,6 +35,15 @@ const FOLDER_LIMITS: Record<string, { mimeTypes: string[]; maxSizeBytes: number 
   },
 };
 
+// Resolve a fileKey to an absolute path INSIDE UPLOADS_ROOT, rejecting traversal attempts
+function resolveSafePath(fileKey: string): string {
+  const resolved = path.resolve(UPLOADS_ROOT, fileKey);
+  if (resolved !== UPLOADS_ROOT && !resolved.startsWith(UPLOADS_ROOT + path.sep)) {
+    throw AppError.badRequest('Invalid file key.');
+  }
+  return resolved;
+}
+
 // Ensure upload directories exist on startup
 for (const folder of Object.keys(FOLDER_LIMITS)) {
   const dir = path.join(UPLOADS_ROOT, folder);
@@ -90,7 +99,7 @@ export class StorageService {
    */
   public async saveFile(fileKey: string, buffer: Buffer): Promise<string> {
     try {
-      const filePath = path.join(UPLOADS_ROOT, fileKey);
+      const filePath = resolveSafePath(fileKey);
       const dir = path.dirname(filePath);
 
       // Ensure directory exists
@@ -119,7 +128,7 @@ export class StorageService {
    * Get file path for a given file key
    */
   public async getFilePath(fileKey: string): Promise<string> {
-    const filePath = path.join(UPLOADS_ROOT, fileKey);
+    const filePath = resolveSafePath(fileKey);
 
     if (!fs.existsSync(filePath)) {
       throw AppError.notFound('File not found on server.');
@@ -132,7 +141,7 @@ export class StorageService {
    * Return local download path for a file
    */
   public async getPresignedDownloadUrl(fileKey: string, _filename?: string) {
-    const filePath = path.join(UPLOADS_ROOT, fileKey);
+    const filePath = resolveSafePath(fileKey);
 
     if (!fs.existsSync(filePath)) {
       throw AppError.notFound('File not found on server.');
@@ -146,7 +155,7 @@ export class StorageService {
    * Get file info (size, mime type, etc.)
    */
   public async getFileInfo(fileKey: string) {
-    const filePath = path.join(UPLOADS_ROOT, fileKey);
+    const filePath = resolveSafePath(fileKey);
 
     if (!fs.existsSync(filePath)) {
       throw AppError.notFound('File not found on server.');
@@ -181,7 +190,7 @@ export class StorageService {
    */
   public async deleteFile(fileKey: string) {
     try {
-      const filePath = path.join(UPLOADS_ROOT, fileKey);
+      const filePath = resolveSafePath(fileKey);
       
       if (!fs.existsSync(filePath)) {
         logger.warn(`File not found for deletion: ${fileKey}`);

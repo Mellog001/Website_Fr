@@ -14,8 +14,12 @@ const app: Application = express();
 app.use(helmet());
 
 // Cross Origin Resource Sharing
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://127.0.0.1:5500,http://localhost:5500').split(',').map(o => o.trim());
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
@@ -54,12 +58,16 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-// Serve local uploaded files
+// Serve ONLY genuinely public upload folders directly (course cover images, avatars).
+// Materials, qualifications, assessments and submissions must NEVER be statically served here -
+// they are gated behind /api/v1/storage/download/:materialId (see checkMaterialAccess middleware).
 app.use(
-  '/uploads',
-  express.static(
-    path.resolve(process.cwd(), 'uploads')
-  )
+  '/uploads/courses',
+  express.static(path.resolve(process.cwd(), 'uploads', 'courses'))
+);
+app.use(
+  '/uploads/avatars',
+  express.static(path.resolve(process.cwd(), 'uploads', 'avatars'))
 );
 
 // Centralized Routing hooks
