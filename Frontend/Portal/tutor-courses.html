@@ -540,14 +540,14 @@ if (imageFile) {
           const statusClass = isPublished ? "status-published" : "status-draft";
           
           const imageHtml = course.imageUrl ? 
-            `<img src="${course.imageUrl}" alt="${course.title}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; margin-bottom: 10px;">` : 
+            `<img src="${escapeHtml(course.imageUrl)}" alt="${escapeHtml(course.title)}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; margin-bottom: 10px;">` : 
             "";
 
           card.innerHTML = `
             ${imageHtml}
-            <h4>${course.title}</h4>
-            <p><strong>Subject:</strong> ${subjectName}</p>
-            <p>${course.description ? course.description.substring(0, 100) + (course.description.length > 100 ? '...' : '') : "No description"}</p>
+            <h4>${escapeHtml(course.title)}</h4>
+            <p><strong>Subject:</strong> ${escapeHtml(subjectName)}</p>
+            <p>${escapeHtml(course.description ? course.description.substring(0, 100) + (course.description.length > 100 ? '...' : '') : "No description")}</p>
             <p><strong>Price:</strong> ${formatKES(course.price)}</p>
             <p><strong>Status:</strong> <span class="status-badge ${statusClass}">${statusText}</span></p>
                        <div class="course-actions">

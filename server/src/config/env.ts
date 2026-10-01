@@ -24,7 +24,8 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: z.string(),
   SMTP_PASS: z.string(),
-  EMAIL_FROM: z.string().email().default('no-reply@educonnect.com')
+  EMAIL_FROM: z.string().email().default('no-reply@educonnect.com'),
+  ADMIN_NOTIFICATION_EMAIL: z.string().email().default('admin@educonnect.test')
 });
 
 const _env = envSchema.safeParse(process.env);

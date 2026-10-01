@@ -351,11 +351,11 @@ async function loadDashboard() {
     card.innerHTML = `
 
       <h4>
-        ${course.title}
+        ${escapeHtml(course.title)}
       </h4>
 
       <p>
-        ${course.subject?.name || "General"}
+        ${escapeHtml(course.subject?.name || "General")}
       </p>
 
       <p>

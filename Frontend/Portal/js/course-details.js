@@ -73,11 +73,11 @@ function renderModules(modules) {
 
   container.innerHTML = modules.map(mod => `
     <div style="border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 6px;">
-      <h4 style="margin: 0 0 0.5rem 0;">${mod.title}</h4>
+      <h4 style="margin: 0 0 0.5rem 0;">${escapeHtml(mod.title)}</h4>
       ${(mod.materials || []).map(material => `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-top: 1px solid #eee;">
-          <span>${material.title}</span>
-          <a href="${material.file_url || material.fileUrl}" target="_blank" download
+          <span>${escapeHtml(material.title)}</span>
+          <a href="${escapeHtml(material.file_url || material.fileUrl)}" target="_blank" download
              style="padding: 0.4rem 0.9rem; background: #28a745; color: white; text-decoration: none; border-radius: 4px; font-size: 0.85rem;">
             Download
           </a>

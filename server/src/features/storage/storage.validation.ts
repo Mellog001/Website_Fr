@@ -18,7 +18,7 @@ export const getUploadUrlSchema = z.object({
     fileName: z.string().min(1, 'File name is required'),
     fileType: z.string().min(1, 'File type is required'),
     fileSize: z.number().positive('File size must be positive'),
-    folder: z.enum(['avatars', 'qualifications', 'courses', 'materials', 'assessments', 'submissions']).default('courses'),
+    folder: z.enum(['avatars', 'qualifications', 'courses', 'materials', 'assessments', 'submissions']).optional(),
     mimeType: z.string().optional(),
     type: z.string().optional(), // Alias for folder
   }),

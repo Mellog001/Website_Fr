@@ -306,7 +306,7 @@
             `;
           } else {
             actionHtml = `
-              <button class="btn btn-enroll enroll-btn" data-course-id="${course.id}" data-title="${course.title}" data-price="${course.price}">
+              <button class="btn btn-enroll enroll-btn" data-course-id="${course.id}" data-title="${escapeHtml(course.title)}" data-price="${course.price}">
                 Enroll Now
               </button>
             `;
@@ -321,15 +321,15 @@
 
         // Course image
         const imageHtml = course.imageUrl ? 
-          `<img src="${course.imageUrl}" alt="${course.title}" class="course-image" onerror="this.style.display='none'">` : 
+          `<img src="${escapeHtml(course.imageUrl)}" alt="${escapeHtml(course.title)}" class="course-image" onerror="this.style.display='none'">` : 
           '';
 
         el.innerHTML = `
           ${imageHtml}
-          <h3>${course.title}</h3>
-          <p class="course-subject">📚 ${course.subject?.name || "General"}</p>
-          <p class="course-tutor">👨‍🏫 ${course.tutor?.user?.email || 'Expert Tutor'}</p>
-          <p>${truncateText(course.description || "", 150)}</p>
+          <h3>${escapeHtml(course.title)}</h3>
+          <p class="course-subject">📚 ${escapeHtml(course.subject?.name || "General")}</p>
+          <p class="course-tutor">👨‍🏫 ${escapeHtml(course.tutor?.user?.email || 'Expert Tutor')}</p>
+          <p>${escapeHtml(truncateText(course.description || "", 150))}</p>
           <p class="course-price">${formatKES(course.price)}</p>
           ${actionHtml}
         `;

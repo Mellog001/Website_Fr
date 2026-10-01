@@ -5,6 +5,17 @@ import { AppError } from '../../common/errors/app-error';
 import { logger } from '../../config/logger';
 import { RowDataPacket } from 'mysql2';
 
+function parseQualifications(raw: any): string[] {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw !== 'string' || !raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export class TutorsService {
   /**
    * Fetch tutor profile by User ID
@@ -25,6 +36,7 @@ export class TutorsService {
     const row = rows[0];
     return {
       ...row,
+      qualifications: parseQualifications(row.qualifications),
       user: {
         id: row.user_id_ref,
         email: row.email,
@@ -61,7 +73,7 @@ export class TutorsService {
     const data = rows.map((r: any) => ({
       id: r.id,
       bio: r.bio,
-      qualifications: r.qualifications,
+      qualifications: parseQualifications(r.qualifications),
       competencyScore: r.competency_score,
       verifiedAt: r.verified_at,
       user: {
@@ -102,7 +114,7 @@ export class TutorsService {
     return {
       id: row.id,
       bio: row.bio,
-      qualifications: row.qualifications,
+      qualifications: parseQualifications(row.qualifications),
       competencyScore: row.competency_score,
       verifiedAt: row.verified_at,
       user: {

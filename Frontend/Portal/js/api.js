@@ -3,6 +3,23 @@
 // Backend: http://localhost:5000/api/v1
 // ============================================================
 
+// ============================================================
+// SECURITY: HTML-escape any user-supplied text before inserting
+// it into innerHTML. Course titles/descriptions, module/material
+// titles, and similar fields are entered by tutors and must never
+// be trusted as raw HTML.
+// ============================================================
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const API_BASE_URL = "http://localhost:5000/api/v1";
 
 // ============================================================
@@ -214,6 +231,15 @@ var Api = {
     return apiFetch("/auth/login", {
       method: "POST",
       body: { email: email, password: password }
+    });
+  },
+  getMe: function() {
+    return apiFetch("/auth/me");
+  },
+  changePassword: function(oldPassword, newPassword) {
+    return apiFetch("/auth/change-password", {
+      method: "PUT",
+      body: { oldPassword: oldPassword, newPassword: newPassword }
     });
   },
   logout: async function() {

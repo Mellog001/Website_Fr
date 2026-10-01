@@ -8,6 +8,15 @@ import { logger } from '../../config/logger';
 import { RowDataPacket } from 'mysql2';
 
 const storageService = new StorageService();
+const UPLOADS_ROOT = path.resolve(process.cwd(), 'uploads');
+
+function resolveSafeUploadPath(fileKey: string): string {
+  const resolved = path.resolve(UPLOADS_ROOT, fileKey);
+  if (resolved !== UPLOADS_ROOT && !resolved.startsWith(UPLOADS_ROOT + path.sep)) {
+    throw AppError.badRequest('Invalid file key.');
+  }
+  return resolved;
+}
 
 export class StorageController {
   /**
@@ -15,6 +24,9 @@ export class StorageController {
    */
   public getUploadUrl = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      if (req.user && req.user.role === 'STUDENT') {
+        throw AppError.forbidden('Students are not permitted to upload files.');
+      }
       const { fileName, fileType, fileSize, type, mimeType } = req.body;
       
       // Validate required fields
@@ -104,7 +116,7 @@ export class StorageController {
       }
 
       // Construct the file path
-      const filePath = path.resolve(process.cwd(), 'uploads', fileKey);
+      const filePath = resolveSafeUploadPath(fileKey);
       
       // Check if file exists
       if (!fs.existsSync(filePath)) {
@@ -141,7 +153,7 @@ export class StorageController {
       }
 
       // Construct the file path
-      const filePath = path.resolve(process.cwd(), 'uploads', fileKey);
+      const filePath = resolveSafeUploadPath(fileKey);
       
       // Check if file exists
       if (!fs.existsSync(filePath)) {
@@ -182,7 +194,7 @@ export class StorageController {
       }
 
       // Resolve full file path and send as download
-      const filePath = path.resolve(process.cwd(), 'uploads', material.file_key);
+      const filePath = resolveSafeUploadPath(material.file_key);
       
       // Check if file exists
       if (!fs.existsSync(filePath)) {

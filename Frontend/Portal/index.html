@@ -1697,8 +1697,8 @@
 
             ? `
               <img
-                src="${imageUrl}"
-                alt="${course.title}"
+                src="${escapeHtml(imageUrl)}"
+                alt="${escapeHtml(course.title)}"
                 class="course-image"
                 loading="lazy"
                 onerror="this.style.display='none'"
@@ -1731,17 +1731,17 @@
 
 
             <h3>
-              ${course.title}
+              ${escapeHtml(course.title)}
             </h3>
 
 
             <div class="course-subject">
-              ${subjectName}
+              ${escapeHtml(subjectName)}
             </div>
 
 
             <div class="course-description">
-              ${truncateText(description, 100)}
+              ${escapeHtml(truncateText(description, 100))}
             </div>
 
 
@@ -1762,8 +1762,8 @@
 
               <span>
                 Tutor:
-                ${course.tutor?.user?.email ||
-                "Expert Tutor"}
+                ${escapeHtml(course.tutor?.user?.email ||
+                "Expert Tutor")}
               </span>
 
             </div>
